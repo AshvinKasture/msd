@@ -1,39 +1,57 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const Input = ({
   className,
   type = 'text',
-  value,
   name,
-  changeHandler,
-  reference,
-  moveField,
-  selectField,
+  value,
+  hasFocus,
+  isValid,
+  showValidity,
+  dispatchState,
 }) => {
+  const inputRef = useRef();
+
+  useEffect(() => {
+    if (hasFocus) {
+      inputRef.current.focus();
+    }
+  }, [hasFocus]);
+
   return (
     <input
+      className={`outline h-8 rounded-md px-1 py-0.5 ${
+        showValidity && !isValid
+          ? 'outline-2 outline-red-600'
+          : 'outline-1 outline-gray-500 focus:outline-black focus:outline-2'
+      } ${className}`}
       type={type}
-      className={`border border-gray-500 h-8 rounded-md px-1 py-0.5 outline-none focus:border-black focus:border-2 ${className}`}
       name={name}
       value={value}
+      ref={inputRef}
       onChange={(e) => {
-        changeHandler({
-          action: 'CHANGE',
-          payload: { field: e.target.name, value: e.target.value },
+        dispatchState({
+          type: 'VALUE_CHANGE',
+          payload: { fieldName: name, value: e.target.value },
         });
       }}
-      ref={reference}
       onKeyUp={({ code, shiftKey }) => {
         if (code === 'Enter') {
           if (shiftKey) {
-            moveField(true);
+            dispatchState({
+              type: 'MOVE_FIELD',
+              payload: { fieldName: name, forward: false },
+            });
           } else {
-            moveField();
+            dispatchState({
+              type: 'MOVE_FIELD',
+              payload: { fieldName: name, forward: true },
+            });
           }
         }
       }}
       onClick={(e) => {
-        selectField(e.target.name);
+        dispatchState({ type: 'CLICK_FIELD', payload: { fieldName: name } });
       }}
     />
   );

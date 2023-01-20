@@ -2,14 +2,8 @@ import React from 'react';
 import Input from './Input';
 
 const InputField = ({
-  label,
-  type,
-  value,
-  name,
-  changeHandler,
-  reference,
-  moveField,
-  selectField,
+  children: { label, type, name, value, hasFocus, isValid, showValidity },
+  dispatchState,
 }) => {
   return (
     <div className='flex my-3 h-12'>
@@ -19,12 +13,12 @@ const InputField = ({
       <Input
         className='basis-2/3'
         type={type}
-        value={value}
         name={name}
-        changeHandler={changeHandler}
-        reference={reference}
-        moveField={moveField}
-        selectField={selectField}
+        value={value}
+        hasFocus={hasFocus}
+        isValid={isValid}
+        showValidity={showValidity}
+        dispatchState={dispatchState}
       />
     </div>
   );
