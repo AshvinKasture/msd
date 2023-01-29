@@ -1,11 +1,12 @@
 import React, { Fragment, useEffect, useState, useContext } from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
-import InputField from '../../components/ui/InputField';
 import ActionButton from '../../components/ui/ActionButton';
 import useForm from '../../hooks/useForm';
-import SuggestionField from '../../components/ui/SuggestionField';
 import AppContext from '../../store/appContext';
 import { isEmpty } from '../../helpers/basicValidations';
+import FormField from '../../components/ui/FormField';
+import Input from '../../components/ui/Input';
+import SuggestionInput from '../../components/ui/SuggestionInput';
 
 const ItemMaster = ({ type }) => {
   const { CREATE, VIEW, EDIT, DELETE } = types;
@@ -16,7 +17,6 @@ const ItemMaster = ({ type }) => {
   };
 
   useEffect(() => {
-    // console.log('running without dependencies');
     if ([VIEW, EDIT, DELETE].includes(type)) {
       async function getItemsFromDatabase() {
         const items = await itemMasterModule.getItems();
@@ -63,7 +63,6 @@ const ItemMaster = ({ type }) => {
   ] = useForm(initialProperties);
 
   useEffect(() => {
-    // console.log('with 2 dependencies');
     if ([VIEW, EDIT, DELETE].includes(type)) {
       const checkIfValueChanged = async function () {
         const { value, isValid } = drawingNoComponent;
@@ -83,7 +82,6 @@ const ItemMaster = ({ type }) => {
     const { description } = await itemMasterModule.getItemByDrawingNo(
       drawingNo
     );
-    // console.log(item);
     dispatchState({
       type: 'SET_VALUE',
       payload: { fieldName: descriptionName, value: description },
@@ -107,18 +105,18 @@ const ItemMaster = ({ type }) => {
     }
   }
 
-  // console.log('component rerender');
-
   const modeContent = {
     CREATE: (
       <Fragment>
-        <InputField
-          component={drawingNoComponent}
+        <FormField
+          properties={drawingNoComponent}
+          component={Input}
           dispatchState={dispatchState}
         />
 
-        <InputField
-          component={descriptionComponent}
+        <FormField
+          properties={descriptionComponent}
+          component={Input}
           dispatchState={dispatchState}
         />
 
@@ -129,15 +127,18 @@ const ItemMaster = ({ type }) => {
     ),
     VIEW: (
       <Fragment>
-        <SuggestionField
-          component={drawingNoComponent}
+        <FormField
+          properties={drawingNoComponent}
+          component={SuggestionInput}
           dispatchState={dispatchState}
         />
-        <InputField
-          component={descriptionComponent}
+
+        <FormField
+          properties={{ ...descriptionComponent, disabled: true }}
+          component={Input}
           dispatchState={dispatchState}
-          disabled={true}
         />
+
         <ActionButton
           className='block mx-auto mt-10 mb-5'
           onClick={(e) => {

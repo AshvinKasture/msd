@@ -1,14 +1,14 @@
 import React, { Fragment, useEffect, useContext } from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import useForm from '../../hooks/useForm';
-import InputField from '../../components/ui/InputField';
-import SuggestionField from '../../components/ui/SuggestionField';
 import ActionButton from '../../components/ui/ActionButton';
 import { isEmpty } from '../../helpers/basicValidations';
 import AppContext from '../../store/appContext';
+import FormField from '../../components/ui/FormField';
+import Input from '../../components/ui/Input';
+import SuggestionInput from '../../components/ui/SuggestionInput';
 
 function VendorMaster({ type }) {
-  // const {vendorNameName, vendorAddressName, gstNoName} = ['vendorName','vendorAddress',]
   const { CREATE, VIEW, EDIT, DELETE } = types;
   const { changePage } = useContext(AppContext);
   const initialProperties = [
@@ -122,15 +122,22 @@ function VendorMaster({ type }) {
   const modeContent = {
     CREATE: (
       <Fragment>
-        <InputField
-          component={customerNameComponent}
+        <FormField
+          properties={customerNameComponent}
+          component={Input}
           dispatchState={dispatchState}
         />
-        <InputField
-          component={customerAddressComponent}
+        <FormField
+          properties={customerAddressComponent}
+          component={Input}
           dispatchState={dispatchState}
         />
-        <InputField component={gstNoComponent} dispatchState={dispatchState} />
+        <FormField
+          properties={gstNoComponent}
+          component={Input}
+          dispatchState={dispatchState}
+        />
+
         <ActionButton className='block mx-auto' onClick={submitForm}>
           Save
         </ActionButton>
@@ -138,19 +145,20 @@ function VendorMaster({ type }) {
     ),
     VIEW: (
       <Fragment>
-        <SuggestionField
-          component={customerNameComponent}
+        <FormField
+          properties={customerNameComponent}
+          component={SuggestionInput}
           dispatchState={dispatchState}
         />
-        <InputField
-          component={customerAddressComponent}
+        <FormField
+          properties={{ ...customerAddressComponent, disabled: true }}
+          component={Input}
           dispatchState={dispatchState}
-          disabled={true}
         />
-        <InputField
-          component={gstNoComponent}
+        <FormField
+          properties={{ ...gstNoComponent, disabled: true }}
+          component={Input}
           dispatchState={dispatchState}
-          disabled={true}
         />
         <ActionButton
           className='block mx-auto'
