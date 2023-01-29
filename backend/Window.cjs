@@ -212,7 +212,7 @@ class WindowHandler {
       title,
       buttonLabel,
     });
-    return filePath;
+    return filePath || [];
   }
 }
 

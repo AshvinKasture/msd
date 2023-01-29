@@ -1,5 +1,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const { windowCodes, comCodes, pages } = require('./codes.cjs');
+const { windowCodes, comCodes, pages, types } = require('./codes.cjs');
+
+contextBridge.exposeInMainWorld('pageModule', {
+  tts: async () => {
+    ipcRenderer.invoke('COMS', {
+      code: 'TTS',
+    });
+  },
+  listenPageChanges: (changePage) => {
+    ipcRenderer.on('PAGE', (event, pageName) => {
+      changePage(pageName);
+    });
+  },
+});
 
 contextBridge.exposeInMainWorld('menuModule', {
   openWindow: (windowName) => {
@@ -14,10 +27,11 @@ contextBridge.exposeInMainWorld('menuModule', {
 
 contextBridge.exposeInMainWorld('windowCodes', { ...windowCodes });
 contextBridge.exposeInMainWorld('pages', { ...pages });
+contextBridge.exposeInMainWorld('types', { ...types });
 
 contextBridge.exposeInMainWorld('itemMasterModule', {
-  createItem: (itemData) => {
-    ipcRenderer.invoke('COMS', {
+  createItem: async (itemData) => {
+    return await ipcRenderer.invoke('COMS', {
       code: comCodes.CREATE_ITEM,
       data: itemData,
     });
@@ -68,8 +82,8 @@ contextBridge.exposeInMainWorld('poMasterModule', {
 });
 
 contextBridge.exposeInMainWorld('vendorMasterModule', {
-  createVendor: (vendorData) => {
-    ipcRenderer.invoke('COMS', {
+  createVendor: async (vendorData) => {
+    return await ipcRenderer.invoke('COMS', {
       code: comCodes.CREATE_VENDOR,
       data: vendorData,
     });
@@ -85,25 +99,24 @@ contextBridge.exposeInMainWorld('vendorMasterModule', {
       data: vendorId,
     });
   },
+  getCustomerByName: async (customerName) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_CUSTOMER_BY_NAME,
+      data: customerName,
+    });
+  },
+  importCustomerMaster: (options) => {
+    ipcRenderer.invoke('COMS', {
+      code: comCodes.IMPORT_CUSTOMER_MASTER,
+      data: options,
+    });
+  },
 });
 
 contextBridge.exposeInMainWorld('fileModule', {
   chooseExcelFile: async () => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.OPEN_EXCEL_FILE,
-    });
-  },
-});
-
-contextBridge.exposeInMainWorld('pageModule', {
-  tts: async () => {
-    ipcRenderer.invoke('COMS', {
-      code: 'TTS',
-    });
-  },
-  listenPageChanges: (changePage) => {
-    ipcRenderer.on('PAGE', (event, pageName) => {
-      changePage(pageName);
     });
   },
 });

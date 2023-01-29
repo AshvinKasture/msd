@@ -3,7 +3,7 @@ import Tree from './Tree';
 import AppContext from '../../../store/appContext';
 
 const NodeItem = ({
-  children: { text, pageValue, subMenu: subTree, active = false },
+  children: { text, pageValue, type, subMenu: subTree, active = false },
 }) => {
   const [showSubTree, setShowSubTree] = useState(false);
 
@@ -13,7 +13,7 @@ const NodeItem = ({
     if (subTree) {
       toggleSubTree();
     } else {
-      changePage(pageValue);
+      changePage(pageValue, type);
     }
   };
 

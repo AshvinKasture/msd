@@ -1,6 +1,15 @@
 const pages = {
   HOME: 'HOME',
-  CREATE_ITEM_MASTER: 'CREATE_ITEM_MASTER',
+  ITEM_MASTER: 'ITEM_MASTER',
+  VENDOR_MASTER: 'VENDOR_MASTER',
+  IMPORT: 'IMPORT',
+};
+
+const types = {
+  CREATE: 'CREATE',
+  VIEW: 'VIEW',
+  EDIT: 'EDIT',
+  DELETE: 'DELETE',
 };
 
 const windowCodes = {
@@ -37,6 +46,8 @@ const comCodes = {
   CREATE_VENDOR: 'CREATE_VENDOR',
   GET_VENDORS: 'GET_VENDORS',
   GET_VENDOR_BY_ID: 'GET_VENDOR_BY_ID',
+  GET_CUSTOMER_BY_NAME: 'GET_CUSTOMER_BY_NAME',
+  IMPORT_CUSTOMER_MASTER: 'IMPORT_CUSTOMER_MASTER',
 };
 
-module.exports = { windowCodes, pages, comCodes };
+module.exports = { windowCodes, pages, types, comCodes };

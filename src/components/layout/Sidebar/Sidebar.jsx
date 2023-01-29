@@ -6,7 +6,7 @@ const Sidebar = () => {
   const { navMenu } = useContext(AppContext);
   // console.log(navMenu);
   return (
-    <div className='bg-zinc-700 text-white basis-2/12 p-2 '>
+    <div className='bg-zinc-700 text-white w-60 p-2 '>
       <div className='font-bold my-5 text-4xl tracking-widest'>MSD</div>
       <NavTree navTree={navMenu} />
     </div>

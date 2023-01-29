@@ -7,7 +7,7 @@ const ActionButton = ({
 }) => {
   return (
     <button
-      className={`border-2 rounded-md text-white bg-blue-500 px-4 py-2 text-xl font-semibold ${classes}`}
+      className={`rounded-md text-white bg-blue-500 px-4 py-2 text-xl font-semibold ${classes}`}
       onClick={clickHandler}
     >
       {children}

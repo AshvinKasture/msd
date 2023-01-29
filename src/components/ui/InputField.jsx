@@ -2,22 +2,23 @@ import React from 'react';
 import Input from './Input';
 
 const InputField = ({
-  children: { label, type, name, value, hasFocus, isValid, showValidity },
+  component: { label, type, name, value, hasFocus, isValid, showValidity },
   dispatchState,
+  disabled = false,
 }) => {
   return (
-    <div className='flex my-3 h-12'>
-      <label htmlFor='' className='basis-1/3'>
+    <div className='flex justify-center items-center my-5'>
+      <label htmlFor='' className='w-40 max-w-xs'>
         {label}
       </label>
       <Input
-        className='basis-2/3'
         type={type}
         name={name}
         value={value}
         hasFocus={hasFocus}
         isValid={isValid}
         showValidity={showValidity}
+        disabled={disabled}
         dispatchState={dispatchState}
       />
     </div>

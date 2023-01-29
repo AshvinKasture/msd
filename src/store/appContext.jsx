@@ -1,17 +1,18 @@
 import React, { useState, createContext } from 'react';
 
-const { HOME, CREATE_ITEM_MASTER } = pages;
-
 const AppContext = createContext({
   page: '',
   appName: '',
-  changePage: (pageName) => {},
+  changePage: (pageName, type) => {},
   navMenu: [],
+  contentSpinner: null,
+  setContentSpinner: (value) => {},
   // pages: {HOME, CREATE_ITEM_MASTER}
 });
 
 export const AppContextProvider = ({ children }) => {
-  const { HOME, CREATE_ITEM_MASTER } = pages;
+  const { HOME, ITEM_MASTER, VENDOR_MASTER, IMPORT } = pages;
+  const { CREATE, VIEW, EDIT, DELETE } = types;
   const navMenu = [
     {
       text: 'Home',
@@ -23,10 +24,13 @@ export const AppContextProvider = ({ children }) => {
       subMenu: [
         {
           text: 'Create',
-          pageValue: CREATE_ITEM_MASTER,
+          pageValue: ITEM_MASTER,
+          type: CREATE,
         },
         {
           text: 'View',
+          pageValue: ITEM_MASTER,
+          type: VIEW,
         },
         {
           text: 'Modify',
@@ -36,6 +40,34 @@ export const AppContextProvider = ({ children }) => {
         },
         {
           text: 'Import',
+          pageValue: IMPORT,
+          type: ITEM_MASTER,
+        },
+      ],
+    },
+    {
+      text: 'Customer Master',
+      subMenu: [
+        {
+          text: 'Create',
+          pageValue: VENDOR_MASTER,
+          type: CREATE,
+        },
+        {
+          text: 'View',
+          pageValue: VENDOR_MASTER,
+          type: VIEW,
+        },
+        {
+          text: 'Modify',
+        },
+        {
+          text: 'Delete',
+        },
+        {
+          text: 'Import',
+          pageValue: IMPORT,
+          type: VENDOR_MASTER,
         },
       ],
     },
@@ -80,11 +112,14 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(pages.HOME);
+  const [page, setPage] = useState(HOME);
+  const [type, setType] = useState(null);
+  const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 
-  const changePage = (pageName) => {
+  const changePage = (pageName, type = null) => {
     setPage(pageName);
+    setType(type);
   };
 
   pageModule.listenPageChanges(changePage);
@@ -93,9 +128,12 @@ export const AppContextProvider = ({ children }) => {
     <AppContext.Provider
       value={{
         page,
+        type,
         changePage,
         appName,
         navMenu,
+        contentSpinner,
+        setContentSpinner,
         // pages: { HOME, CREATE_ITEM_MASTER },
       }}
     >

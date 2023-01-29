@@ -2,7 +2,7 @@ const { ipcMain } = require('electron');
 const path = require('path');
 const XLSX = require('XLSX');
 const Database = require('./database.cjs');
-const { windowCodes, comCodes } = require('./codes.cjs');
+const { pages, windowCodes, comCodes } = require('./codes.cjs');
 
 class BusinessLayer {
   constructor(windowHandeler, userDataPath) {
@@ -76,8 +76,7 @@ class BusinessLayer {
         case comCodes.OPEN_EXCEL_FILE:
           return this.openExcelFile();
         case comCodes.CREATE_ITEM:
-          await this.createItem(data);
-          break;
+          return await this.createItem(data);
         case comCodes.GET_ITEMS:
           return await this.getItems();
         case comCodes.GET_ITEM_BY_ID:
@@ -95,12 +94,15 @@ class BusinessLayer {
         case comCodes.GET_ITEMS_OF_PO:
           return await this.getItemsOfPo(data);
         case comCodes.CREATE_VENDOR:
-          await this.createVendor(data);
-          break;
+          return await this.createVendor(data);
         case comCodes.GET_VENDORS:
           return await this.getVendors();
         case comCodes.GET_VENDOR_BY_ID:
           return await this.getVendorById(data);
+        case comCodes.GET_CUSTOMER_BY_NAME:
+          return await this.getCustomerByName(data);
+        case comCodes.IMPORT_CUSTOMER_MASTER:
+          return await this.importCustomerMaster(data);
         default:
           console.error(`No COMS code found for ${code}`);
       }
@@ -119,7 +121,7 @@ class BusinessLayer {
       ],
     });
     if (choosenFiles.length !== 1) {
-      throw Error('Accurate number of files did not get selected');
+      return null;
     }
     const filePath = choosenFiles[0];
     const file = XLSX.readFile(filePath);
@@ -127,7 +129,6 @@ class BusinessLayer {
     return {
       fileName: path.basename(filePath),
       sheetNames: file.SheetNames,
-      file,
     };
   }
 
@@ -142,6 +143,12 @@ class BusinessLayer {
 
   async createItem({ drawingNo, description }) {
     try {
+      if ((await this.getItemByDrawingNo(drawingNo)) !== null) {
+        this.windowHandeler.showErrorBox({
+          message: `Item ${drawingNo} already exists`,
+        });
+        return false;
+      }
       const response = await this.db.exec({
         query:
           'INSERT INTO item_master(drg_no, description) VALUES($drgNo, $description);',
@@ -151,12 +158,15 @@ class BusinessLayer {
         },
       });
       await this.windowHandeler.showInfoBox({ message: 'Item created' });
-      this.windowHandeler.openWindow(windowCodes.HOME);
+      return true;
+      // this.windowHandeler.changePage(pages.HOME);
+      // this.windowHandeler.openWindow(windowCodes.HOME);
     } catch (error) {
       console.error(error);
       this.windowHandeler.showErrorBox({
         message: 'Error in creating item',
       });
+      return false;
     }
   }
 
@@ -261,7 +271,8 @@ class BusinessLayer {
           message: `${alreadyExisting.length} skipped and imported others`,
         });
       }
-      this.windowHandeler.openWindow(windowCodes.HOME);
+      // this.windowHandeler.openWindow(windowCodes.HOME);
+      this.windowHandeler.changePage(pages.HOME);
     } catch (error) {
       console.error(error);
     }
@@ -321,6 +332,13 @@ class BusinessLayer {
 
   async createVendor({ vendorName, vendorAddress, gstNo }) {
     try {
+      console.log(await this.getCustomerByName(vendorName));
+      if ((await this.getVendorByName(vendorName)) !== null) {
+        this.windowHandeler.showErrorBox({
+          message: `Vendor ${vendorName} already exists`,
+        });
+        return false;
+      }
       const response = await this.db.exec({
         query:
           'INSERT INTO vendor_master(vendor_name, vendor_address, gst_no) VALUES($vendorName, $vendorAddress, $gstNo)',
@@ -331,9 +349,11 @@ class BusinessLayer {
         },
       });
       await this.windowHandeler.showInfoBox({ message: 'Vendor created' });
-      this.windowHandeler.openWindow(windowCodes.HOME);
+      return true;
+      // this.windowHandeler.openWindow(windowCodes.HOME);
     } catch (error) {
       console.error(error);
+      this.windowHandeler.showErrorBox({ message: 'Error in creating vendor' });
     }
   }
 
@@ -360,6 +380,97 @@ class BusinessLayer {
       } else {
         throw Error('Did not get a single vendor in query');
       }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getCustomerByName(customerName) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT * from vendor_master WHERE vendor_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      if (result.length === 1) {
+        return result[0];
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async checkIfCustomerExists(customerName) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT vendor_name FROM vendor_master WHERE vendor_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      return result.length === 1;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async importCustomerMaster(options) {
+    try {
+      const { sheetName, start, end, cols } = options;
+      const customerNameCol = this.extractColFromExcel({
+        sheetName,
+        start,
+        end,
+        col: cols.customerName,
+      });
+      const customerAddressCol =
+        cols.customerAddress !== ''
+          ? this.extractColFromExcel({
+              sheetName,
+              start,
+              end,
+              col: cols.customerAddress,
+            })
+          : Array(customerNameCol.length).fill('');
+      const gstNoCol =
+        cols.gstNo !== ''
+          ? this.extractColFromExcel({ sheetName, start, end, col: cols.gstNo })
+          : Array(customerNameCol.length).fill('');
+      const alreadyExisting = [];
+      for (let i = 0; i < customerNameCol.length; i++) {
+        const customerName = customerNameCol[i];
+        const customerAddress = customerAddressCol[i];
+        const gstNo = gstNoCol[i];
+        const exists = await this.checkIfCustomerExists(customerName);
+        if (!exists) {
+          await this.db.exec({
+            query:
+              'INSERT INTO vendor_master(vendor_name, vendor_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+            params: {
+              $customerName: customerName,
+              $customerAddress: customerAddress,
+              $gstNo: gstNo,
+            },
+          });
+        } else {
+          alreadyExisting.push(customerName);
+        }
+      }
+      if (alreadyExisting.length === 0) {
+        this.windowHandeler.showInfoBox({
+          message: 'Customer Master imported',
+        });
+      } else {
+        this.windowHandeler.showInfoBox({
+          message: `${alreadyExisting.length} skipped and imported others`,
+        });
+      }
+      this.windowHandeler.changePage(pages.HOME);
     } catch (error) {
       console.error(error);
     }

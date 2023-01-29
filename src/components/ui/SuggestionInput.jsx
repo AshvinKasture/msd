@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
+import SuggestionBox from './SuggestionBox';
 
-const Input = ({
+const SuggestionInput = ({
   className,
   type = 'text',
   name,
@@ -8,14 +9,21 @@ const Input = ({
   hasFocus,
   isValid,
   showValidity,
+  suggestions,
   disabled,
   dispatchState,
 }) => {
   const inputRef = useRef();
 
+  const [showSuggestionBox, setShowSuggestionBox] = useState(false);
+
   useEffect(() => {
     if (hasFocus) {
       inputRef.current.focus();
+      setShowSuggestionBox(true);
+    } else {
+      //   console.log('no focus');
+      setShowSuggestionBox(false);
     }
   }, [hasFocus]);
 
@@ -26,18 +34,21 @@ const Input = ({
     });
   }
 
-  // useEffect(() => {
-  //   changeValue('');
-  // }, []);
+  function fillSuggestion(value) {
+    dispatchState({
+      type: 'FILL_SUGGESTION',
+      payload: { fieldName: name, value },
+    });
+  }
 
   return (
-    <div className=''>
+    <div className='relative'>
       <input
         className={`outline rounded-sm mx-0.5 px-1 py-0.5 ${
           showValidity && !isValid
             ? 'outline-2 outline-red-600'
             : 'outline-1 outline-gray-500 focus:outline-black focus:outline-2'
-        }   ${disabled && 'bg-gray-300 cursor-not-allowed'} ${className}`}
+        } ${disabled && 'bg-gray-300 cursor-not-allowed'} ${className}`}
         type={type}
         name={name}
         value={value}
@@ -64,9 +75,20 @@ const Input = ({
         onClick={(e) => {
           dispatchState({ type: 'CLICK_FIELD', payload: { fieldName: name } });
         }}
+        onBlur={(e) => {
+          setTimeout(() => {
+            dispatchState({ type: 'FOCUS_OUT', payload: { fieldName: name } });
+          }, 100);
+        }}
+      />
+      <SuggestionBox
+        suggestions={suggestions}
+        inputValue={value}
+        show={showSuggestionBox}
+        fillSuggestion={fillSuggestion}
       />
     </div>
   );
 };
 
-export default Input;
+export default SuggestionInput;

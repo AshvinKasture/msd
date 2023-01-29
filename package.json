@@ -5,11 +5,10 @@
   "type": "module",
   "main": "main.cjs",
   "scripts": {
-    "dev:react": "vite",
+    "react": "vite",
     "build:react": "vite build",
     "preview:react": "vite preview",
-    "electron": "electron .",
-    "dev:electron": "nodemon --watch . --exec electron .",
+    "electron": "nodemon --watch . --exec electron .",
     "dev": "concurrently -k \"npm run dev:react\" \"wait-on tcp:3000 && npm run dev:electron\""
   },
   "dependencies": {
