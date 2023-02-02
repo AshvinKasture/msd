@@ -1,4 +1,10 @@
-import React, { Fragment, useState, useEffect, useReducer } from 'react';
+import React, {
+  Fragment,
+  useState,
+  useEffect,
+  useReducer,
+  useContext,
+} from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import FormField from '../../components/ui/inputs/FormField/FormField';
 import TextInput from '../../components/ui/inputs/TextInput/TextInput';
@@ -9,7 +15,7 @@ import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 import AppContext from '../../store/appContext';
 
 function PoMaster({ type }) {
-  const { setContentSpinner } = useContent(AppContext);
+  const { setContentSpinner } = useContext(AppContext);
 
   const [customerList, setCustomerList] = useState([]);
   const [itemsTable, setItemsTable] = useState({ rawItems: [] });
