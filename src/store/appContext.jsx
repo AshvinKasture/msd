@@ -116,7 +116,7 @@ export const AppContextProvider = ({ children }) => {
     },
   ];
   const [page, setPage] = useState(PO_MASTER);
-  const [type, setType] = useState(CREATE);
+  const [type, setType] = useState(VIEW);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

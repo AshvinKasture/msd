@@ -15,8 +15,10 @@ const SuggestionInput = forwardRef(
       placeholder = '',
       name = null,
       value = '',
+      disabled = false,
       width = 52,
       strict = true,
+      extendChangeHandler = null,
       extendFillHandler = null,
       extendBlurHandler = null,
       dispatchNavigationShortcut = null,
@@ -38,12 +40,11 @@ const SuggestionInput = forwardRef(
                     suggestionItem.toLowerCase().includes(payload.toLowerCase())
                   )
                 : [];
-
             return {
               text: payload,
               filteredSuggestions,
               showSuggestionBox: filteredSuggestions.length > 0,
-              isValid: strict ? suggestions.indexOf(payload) !== -1 : true,
+              isValid: strict ? suggestions.includes(payload) : true,
             };
           case 'FILL_SUGGESTION':
             return {
@@ -110,6 +111,9 @@ const SuggestionInput = forwardRef(
 
     function changeHandler(e) {
       dispatchState({ type: 'CHANGE_VALUE', payload: e.target.value });
+      if (extendChangeHandler !== null) {
+        extendChangeHandler(e.target.value);
+      }
     }
 
     function fillSuggestion(value) {
@@ -177,6 +181,7 @@ const SuggestionInput = forwardRef(
           placeholder={placeholder}
           name={name}
           value={text}
+          disabled={disabled}
           width={width}
           className={classes}
           replaceChangeHandler={changeHandler}

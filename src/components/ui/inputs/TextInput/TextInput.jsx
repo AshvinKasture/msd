@@ -14,6 +14,7 @@ const TextInput = forwardRef(
       name = null,
       value = '',
       width = 52,
+      disabled = false,
       acceptedInput = ({ newValue: value }) => value,
       extendChangeHandler = null,
       replaceChangeHandler = null,
@@ -30,6 +31,7 @@ const TextInput = forwardRef(
     },
     ref
   ) => {
+    // console.log({ name, value });
     const [text, setText] = useState(value);
 
     const inputRef = useRef();
@@ -113,21 +115,28 @@ const TextInput = forwardRef(
       inputRef.current.focus();
     }
 
+    function setValue(value) {
+      setText(value);
+    }
+
     function reset() {
       setText('');
     }
 
     useImperativeHandle(ref, () => {
-      return { value: text, focus, reset };
+      return { value: text, focus, reset, setValue };
     });
     return (
       <input
         className={twMerge(
-          `w-${width} outline outline-1 outline-black focus:outline-2 px-2 py-1 ${classes}`
+          `w-${width} outline outline-1 outline-black focus:outline-2 px-2 py-1 ${
+            disabled && 'bg-gray-300 cursor-not-allowed'
+          } ${classes}`
         )}
         placeholder={placeholder}
         name={name}
         value={text}
+        disabled={disabled}
         onChange={changeHandler}
         onClick={clickHandler}
         onFocus={focusHandler}

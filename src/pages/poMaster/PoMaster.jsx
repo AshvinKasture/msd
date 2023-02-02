@@ -15,10 +15,11 @@ import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 import AppContext from '../../store/appContext';
 
 function PoMaster({ type }) {
-  const { setContentSpinner } = useContext(AppContext);
+  const { changePage, setContentSpinner } = useContext(AppContext);
 
   const [customerList, setCustomerList] = useState([]);
   const [itemsTable, setItemsTable] = useState({ rawItems: [] });
+  const [poList, setPoList] = useState([]);
 
   const [[poNumberRef, customerNameRef], dispatchNavigationShortcut] =
     useNavigationShortcuts({
@@ -38,6 +39,7 @@ function PoMaster({ type }) {
         )
       );
     }
+
     async function getItems() {
       const items = await itemMasterModule.getItems();
       const itemsTable = {
@@ -51,15 +53,41 @@ function PoMaster({ type }) {
       }
       setItemsTable(itemsTable);
     }
+    async function getPoList() {
+      const poList = await poMasterModule.getPoList();
+      setPoList(poList.map((poItem) => poItem.po_no));
+    }
     initialElementFocus();
-    getCustomerList();
-    getItems();
+    switch (type) {
+      case 'CREATE':
+        getCustomerList();
+        getItems();
+        break;
+      case 'VIEW':
+        getPoList();
+        break;
+    }
   }, []);
+
+  useEffect(() => {
+    resetPage();
+  }, [type]);
 
   function resetPage() {
     poNumberRef.ref.current.reset();
     customerNameRef.ref.current.reset();
     resetTable();
+  }
+
+  async function getPoDetails(poNumber) {
+    const poDetails = await poMasterModule.getPoDetails(poNumber);
+    customerNameRef.ref.current.setValue(poDetails.customerName);
+    const tableRows = [];
+    for (let i = 0; i < poDetails.poItems.length; i++) {
+      const { drg_no: drawingNo, description, quantity } = poDetails.poItems[i];
+      tableRows.push({ index: i, drawingNo, description, quantity });
+    }
+    dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
   }
 
   const [tableState, dispatchTableState] = useReducer(
@@ -107,6 +135,8 @@ function PoMaster({ type }) {
           };
           newRowState[index] = newRowData;
           return newRowState;
+        case 'SET_ROWS':
+          return payload;
         case 'RESET':
           return [
             {
@@ -225,6 +255,79 @@ function PoMaster({ type }) {
         </ActionButton>
       </Fragment>
     ),
+    VIEW: (
+      <Fragment>
+        <div className='flex justify-center gap-10'>
+          <FormField
+            component={SuggestionInput}
+            label='PO Number'
+            componentProperties={{
+              placeholder: 'PO Number',
+              name: 'poNumber',
+              suggestions: poList,
+              strict: true,
+              extendChangeHandler: () => {
+                setTimeout(() => {
+                  const { value, isValid } = poNumberRef.ref.current;
+                  if (isValid) {
+                    getPoDetails(value);
+                  }
+                }, 100);
+              },
+              extendFillHandler: (value) => {
+                getPoDetails(value);
+              },
+            }}
+            ref={poNumberRef.ref}
+          />
+          <FormField
+            component={TextInput}
+            label='Customer Name'
+            componentProperties={{
+              name: 'customerName',
+              value: '',
+              disabled: true,
+            }}
+            ref={customerNameRef.ref}
+          />
+        </div>
+        <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
+          <div className='table-header-group text-center font-bold text-lg'>
+            <div className='table-row'>
+              <div className='table-cell py-2 border border-black'>
+                Drawing No
+              </div>
+              <div className='table-cell py-2 border border-black w-3/5'>
+                Description
+              </div>
+              <div className='table-cell py-2 border border-black'>
+                Quantity
+              </div>
+            </div>
+          </div>
+          <div className='table-row-group'>
+            {tableState.map((tableRow) => {
+              return (
+                <TableRow
+                  key={tableRow.index}
+                  rowData={tableRow}
+                  disabled={true}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <ActionButton
+          className='block mx-auto my-10'
+          onClick={(e) => {
+            changePage(pages.HOME);
+          }}
+        >
+          Back
+        </ActionButton>
+      </Fragment>
+    ),
   };
 
   function isRowValid({ drawingNo, description, quantity }) {
@@ -251,7 +354,6 @@ function PoMaster({ type }) {
     resetPage();
     setContentSpinner(false);
   }
-
   return (
     <Fragment>
       <TitleBar>PO Master</TitleBar>

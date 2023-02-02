@@ -6,12 +6,13 @@ import { isPositiveInteger } from '../../../helpers/basicValidations';
 
 function TableRow({
   rowData: { index, drawingNo, description, quantity },
-  addRow,
-  setDrawingNo,
-  setDescription,
-  setQuantity,
-  itemsTable,
-  focusFirstElement,
+  disabled = false,
+  addRow = null,
+  setDrawingNo = null,
+  setDescription = null,
+  setQuantity = null,
+  itemsTable = null,
+  focusFirstElement = false,
 }) {
   const [
     [drawingNoRef, descriptionRef, quantityRef],
@@ -37,10 +38,16 @@ function TableRow({
         <SuggestionInput
           name='drawingNo'
           value={drawingNo}
-          suggestions={itemsTable.rawItems.map((item) => item.drg_no)}
-          extendBlurHandler={(e, value) => {
-            setDrawingNo(index, value);
-          }}
+          disabled={disabled}
+          suggestions={
+            itemsTable ? itemsTable.rawItems.map((item) => item.drg_no) : []
+          }
+          extendBlurHandler={
+            setDrawingNo &&
+            ((e, value) => {
+              setDrawingNo(index, value);
+            })
+          }
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0'
           ref={drawingNoRef.ref}
@@ -51,10 +58,18 @@ function TableRow({
           width='full'
           name='description'
           value={description}
-          suggestions={itemsTable.rawItems.map((item) => item.description)}
-          extendBlurHandler={(e, value) => {
-            setDescription(index, value);
-          }}
+          disabled={disabled}
+          suggestions={
+            itemsTable
+              ? itemsTable.rawItems.map((item) => item.description)
+              : []
+          }
+          extendBlurHandler={
+            setDescription &&
+            ((e, value) => {
+              setDescription(index, value);
+            })
+          }
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0'
           ref={descriptionRef.ref}
@@ -64,7 +79,10 @@ function TableRow({
         <TextInput
           name='quantity'
           value={quantity}
-          extendChangeHandler={(e, value) => setQuantity(index, value)}
+          disabled={disabled}
+          extendChangeHandler={
+            setQuantity && ((e, value) => setQuantity(index, value))
+          }
           acceptedInput={({ oldValue, newValue }) => {
             return isPositiveInteger(newValue) ? newValue : oldValue;
           }}

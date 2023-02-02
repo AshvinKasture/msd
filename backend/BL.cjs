@@ -92,6 +92,8 @@ class BusinessLayer {
           return await this.getAllPo();
         case comCodes.GET_ITEMS_OF_PO:
           return await this.getItemsOfPo(data);
+        case comCodes.GET_PO_DETAILS:
+          return await this.getPoDetails(data);
         case comCodes.CREATE_CUSTOMER:
           return await this.createCustomer(data);
         case comCodes.GET_CUSTOMERS:
@@ -330,6 +332,44 @@ class BusinessLayer {
         $poId: poId,
       },
     });
+  }
+
+  async getPoFromPoNumber(poNumber) {
+    const result = await this.db.exec({
+      query: 'SELECT * FROM po_master WHERE po_no=$poNumber',
+      params: {
+        $poNumber: poNumber,
+      },
+    });
+    if (result.length === 1) {
+      return result[0];
+    } else {
+      throw Error('Did not get single PO');
+    }
+  }
+
+  async getPoDetails(poNumber) {
+    try {
+      const poDetails = {
+        poId: null,
+        poNumber,
+        customerName: null,
+        poItems: null,
+      };
+      let result = await this.getPoFromPoNumber(poNumber);
+      poDetails.poId = result.po_id;
+      result = await this.getCustomerById(result.customer_id);
+      poDetails.customerName = result.customer_name;
+      result = await this.db.exec({
+        query:
+          'SELECT * FROM po_items p, item_master i WHERE p.po_id=$poId AND p.item_id=i.item_id',
+        params: { $poId: poDetails.poId },
+      });
+      poDetails.poItems = result;
+      return poDetails;
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async createCustomer({ customerName, customerAddress, gstNo }) {

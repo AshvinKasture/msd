@@ -69,7 +69,7 @@ contextBridge.exposeInMainWorld('poMasterModule', {
       data: poData,
     });
   },
-  getAllPo: async () => {
+  getPoList: async () => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ALL_PO,
     });
@@ -78,6 +78,12 @@ contextBridge.exposeInMainWorld('poMasterModule', {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ITEMS_OF_PO,
       data: poId,
+    });
+  },
+  getPoDetails: async (poNumber) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_PO_DETAILS,
+      data: poNumber,
     });
   },
 });
