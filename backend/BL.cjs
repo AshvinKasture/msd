@@ -30,7 +30,7 @@ class BusinessLayer {
       },
       {
         query:
-          'CREATE TABLE po_master(po_id INTEGER PRIMARY KEY AUTOINCREMENT, po_no VARCHAR(10), created_at DATETIME DEFAULT CURRENT_TIMESTAMP)',
+          'CREATE TABLE po_master(po_id INTEGER PRIMARY KEY AUTOINCREMENT, po_no VARCHAR(10), customer_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (customer_id) REFERENCES customer_master(customer_id))',
       },
       {
         query:
@@ -38,7 +38,7 @@ class BusinessLayer {
       },
       {
         query:
-          'CREATE TABLE vendor_master(vendor_id INTEGER PRIMARY KEY AUTOINCREMENT, vendor_name TEXT, vendor_address TEXT, gst_no VARCHAR(30))',
+          'CREATE TABLE customer_master(customer_id INTEGER PRIMARY KEY AUTOINCREMENT, customer_name TEXT, customer_address TEXT, gst_no VARCHAR(30))',
       },
     ];
     for (let i = 0; i < queryList.length; i++) {
@@ -67,7 +67,6 @@ class BusinessLayer {
   coms() {
     ipcMain.handle('COMS', async (event, payload) => {
       const { code, data } = payload;
-      // let windowName, drawingNo, description, itemId, options, vendorName, vendorAddress, gstNo
       switch (code) {
         case comCodes.OPEN_WINDOW:
           const { windowName } = data;
@@ -93,12 +92,12 @@ class BusinessLayer {
           return await this.getAllPo();
         case comCodes.GET_ITEMS_OF_PO:
           return await this.getItemsOfPo(data);
-        case comCodes.CREATE_VENDOR:
-          return await this.createVendor(data);
-        case comCodes.GET_VENDORS:
-          return await this.getVendors();
-        case comCodes.GET_VENDOR_BY_ID:
-          return await this.getVendorById(data);
+        case comCodes.CREATE_CUSTOMER:
+          return await this.createCustomer(data);
+        case comCodes.GET_CUSTOMERS:
+          return await this.getCustomers();
+        case comCodes.GET_CUSTOMER_BY_ID:
+          return await this.getCustomerById(data);
         case comCodes.GET_CUSTOMER_BY_NAME:
           return await this.getCustomerByName(data);
         case comCodes.IMPORT_CUSTOMER_MASTER:
@@ -159,8 +158,6 @@ class BusinessLayer {
       });
       await this.windowHandeler.showInfoBox({ message: 'Item created' });
       return true;
-      // this.windowHandeler.changePage(pages.HOME);
-      // this.windowHandeler.openWindow(windowCodes.HOME);
     } catch (error) {
       console.error(error);
       this.windowHandeler.showErrorBox({
@@ -173,7 +170,7 @@ class BusinessLayer {
   async getItems() {
     try {
       const result = await this.db.exec({
-        query: 'SELECT item_id, drg_no FROM item_master;',
+        query: 'SELECT item_id, drg_no, description FROM item_master;',
       });
       return result;
     } catch (error) {
@@ -278,12 +275,18 @@ class BusinessLayer {
     }
   }
 
-  async createPo({ poNumber, itemRows }) {
+  async createPo({ poNumber, customerName, itemRows }) {
     try {
+      const customer = await this.getCustomerByName(customerName);
+      if (customer === null) {
+        throw Error(`Customer ${customerName} does not exist`);
+      }
       await this.db.exec({
-        query: 'INSERT INTO po_master(po_no) VALUES($poNumber)',
+        query:
+          'INSERT INTO po_master(po_no, customer_id) VALUES($poNumber, $customerId)',
         params: {
           $poNumber: poNumber,
+          $customerId: customer.customer_id,
         },
       });
       const result = await this.db.exec({
@@ -309,7 +312,6 @@ class BusinessLayer {
         });
       }
       this.windowHandeler.showInfoBox({ message: 'PO created' });
-      this.windowHandeler.openWindow(windowCodes.HOME);
     } catch (error) {
       console.error(error);
     }
@@ -330,55 +332,56 @@ class BusinessLayer {
     });
   }
 
-  async createVendor({ vendorName, vendorAddress, gstNo }) {
+  async createCustomer({ customerName, customerAddress, gstNo }) {
     try {
-      console.log(await this.getCustomerByName(vendorName));
-      if ((await this.getVendorByName(vendorName)) !== null) {
+      if ((await this.getCustomerByName(customerName)) !== null) {
         this.windowHandeler.showErrorBox({
-          message: `Vendor ${vendorName} already exists`,
+          message: `Customer ${customerName} already exists`,
         });
         return false;
       }
       const response = await this.db.exec({
         query:
-          'INSERT INTO vendor_master(vendor_name, vendor_address, gst_no) VALUES($vendorName, $vendorAddress, $gstNo)',
+          'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
         params: {
-          $vendorName: vendorName,
-          $vendorAddress: vendorAddress,
+          $customerName: customerName,
+          $customerAddress: customerAddress,
           $gstNo: gstNo,
         },
       });
-      await this.windowHandeler.showInfoBox({ message: 'Vendor created' });
+      await this.windowHandeler.showInfoBox({ message: 'Customer created' });
       return true;
       // this.windowHandeler.openWindow(windowCodes.HOME);
     } catch (error) {
       console.error(error);
-      this.windowHandeler.showErrorBox({ message: 'Error in creating vendor' });
+      this.windowHandeler.showErrorBox({
+        message: 'Error in creating customer',
+      });
     }
   }
 
-  async getVendors() {
+  async getCustomers() {
     try {
       return await this.db.exec({
-        query: 'SELECT vendor_id, vendor_name FROM vendor_master;',
+        query: 'SELECT customer_id, customer_name FROM customer_master;',
       });
     } catch (error) {
       console.error(error);
     }
   }
 
-  async getVendorById(vendorId) {
+  async getCustomerById(customerId) {
     try {
       const result = await this.db.exec({
-        query: 'SELECT * FROM vendor_master WHERE vendor_id=$vendorId',
+        query: 'SELECT * FROM customer_master WHERE customer_id=$customerId',
         params: {
-          $vendorId: vendorId,
+          $customerId: customerId,
         },
       });
       if (result.length === 1) {
         return result[0];
       } else {
-        throw Error('Did not get a single vendor in query');
+        throw Error('Did not get a single customer in query');
       }
     } catch (error) {
       console.error(error);
@@ -388,7 +391,8 @@ class BusinessLayer {
   async getCustomerByName(customerName) {
     try {
       const result = await this.db.exec({
-        query: 'SELECT * from vendor_master WHERE vendor_name=$customerName',
+        query:
+          'SELECT * from customer_master WHERE customer_name=$customerName',
         params: {
           $customerName: customerName,
         },
@@ -408,7 +412,7 @@ class BusinessLayer {
     try {
       const result = await this.db.exec({
         query:
-          'SELECT vendor_name FROM vendor_master WHERE vendor_name=$customerName',
+          'SELECT customer_name FROM customer_master WHERE customer_name=$customerName',
         params: {
           $customerName: customerName,
         },
@@ -450,7 +454,7 @@ class BusinessLayer {
         if (!exists) {
           await this.db.exec({
             query:
-              'INSERT INTO vendor_master(vendor_name, vendor_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+              'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
             params: {
               $customerName: customerName,
               $customerAddress: customerAddress,

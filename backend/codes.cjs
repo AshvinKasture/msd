@@ -1,7 +1,8 @@
 const pages = {
   HOME: 'HOME',
   ITEM_MASTER: 'ITEM_MASTER',
-  VENDOR_MASTER: 'VENDOR_MASTER',
+  CUSTOMER_MASTER: 'CUSTOMER_MASTER',
+  PO_MASTER: 'PO_MASTER',
   IMPORT: 'IMPORT',
 };
 
@@ -16,7 +17,7 @@ const windowCodes = {
   HOME: 'home',
   ITEM_MASTER_MENU: 'item_master/menu',
   PO_MASTER_MENU: 'po_master/menu',
-  VENDOR_MASTER_MENU: 'vendor_master/menu',
+  CUSTOMER_MASTER_MENU: 'customer_master/menu',
   DELIVERY_CHALLAN_MENU: 'delivery_challan/menu',
   MASTER_SHEET: 'master_sheet',
   CREATE_ITEM_MASTER: 'item_master/create',
@@ -24,12 +25,10 @@ const windowCodes = {
   IMPORT_ITEM_MASTER: 'item_master/import',
   CREATE_PO_MASTER: 'po_master/create',
   VIEW_PO_MASTER: 'po_master/view',
-  CREATE_VENDOR_MASTER: 'vendor_master/create',
-  VIEW_VENDOR_MASTER: 'vendor_master/view',
+  CREATE_CUSTOMER_MASTER: 'customer_master/create',
+  VIEW_CUSTOMER_MASTER: 'customer_master/view',
   CREATE_DELIVERY_CHALLAN: 'delivery_challan/create',
   VIEW_DELIVERY_CHALLAN: 'delivery_challan/menu',
-  PAGE1: 'PAGE1',
-  PAGE2: 'PAGE2',
 };
 
 const comCodes = {
@@ -43,9 +42,9 @@ const comCodes = {
   CREATE_PO: 'CREATE_PO',
   GET_ALL_PO: 'GET_ALL_PO',
   GET_ITEMS_OF_PO: 'GET_ITEMS_OF_PO',
-  CREATE_VENDOR: 'CREATE_VENDOR',
-  GET_VENDORS: 'GET_VENDORS',
-  GET_VENDOR_BY_ID: 'GET_VENDOR_BY_ID',
+  CREATE_CUSTOMER: 'CREATE_CUSTOMER',
+  GET_CUSTOMERS: 'GET_CUSTOMERS',
+  GET_CUSTOMER_BY_ID: 'GET_CUSTOMER_BY_ID',
   GET_CUSTOMER_BY_NAME: 'GET_CUSTOMER_BY_NAME',
   IMPORT_CUSTOMER_MASTER: 'IMPORT_CUSTOMER_MASTER',
 };

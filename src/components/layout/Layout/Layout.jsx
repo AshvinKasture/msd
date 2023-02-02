@@ -5,6 +5,7 @@ import AppContext from '../../../store/appContext';
 
 const Layout = ({ children }) => {
   const { contentSpinner } = useContext(AppContext);
+
   return (
     <div className='flex min-h-screen'>
       <Sidebar />

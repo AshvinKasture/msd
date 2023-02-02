@@ -8,7 +8,7 @@ import FormField from '../../components/ui/FormField';
 import Input from '../../components/ui/Input';
 import SuggestionInput from '../../components/ui/SuggestionInput';
 
-function VendorMaster({ type }) {
+function CustomerMaster({ type }) {
   const { CREATE, VIEW, EDIT, DELETE } = types;
   const { changePage } = useContext(AppContext);
   const initialProperties = [
@@ -53,12 +53,12 @@ function VendorMaster({ type }) {
   useEffect(() => {
     if ([VIEW, EDIT, DELETE].includes(type)) {
       async function getCustomersFromDatabase() {
-        const customers = await vendorMasterModule.getVendors();
+        const customers = await customerMasterModule.getCustomers();
         dispatchState({
           type: 'SET_SUGGESTIONS',
           payload: {
             fieldName: 'customerName',
-            suggestions: customers.map((customer) => customer.vendor_name),
+            suggestions: customers.map((customer) => customer.customer_name),
           },
         });
       }
@@ -67,8 +67,8 @@ function VendorMaster({ type }) {
   }, [type]);
 
   async function fillValues(customerName) {
-    const { vendor_address: customerAddress, gst_no: gstNo } =
-      await vendorMasterModule.getCustomerByName(customerName);
+    const { customer_address: customerAddress, gst_no: gstNo } =
+      await customerMasterModule.getCustomerByName(customerName);
     dispatchState({
       type: 'SET_VALUE',
       payload: {
@@ -106,9 +106,9 @@ function VendorMaster({ type }) {
       const customerName = customerNameComponent.value;
       const customerAddress = customerAddressComponent.value;
       const gstNo = gstNoComponent.value;
-      const result = await vendorMasterModule.createVendor({
-        vendorName,
-        vendorAddress,
+      const result = await customerMasterModule.createCustomer({
+        customerName,
+        customerAddress,
         gstNo,
       });
       if (result) {
@@ -179,4 +179,4 @@ function VendorMaster({ type }) {
   );
 }
 
-export default VendorMaster;
+export default CustomerMaster;

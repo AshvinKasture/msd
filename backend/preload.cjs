@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('itemMasterModule', {
       code: comCodes.GET_ITEMS,
     });
   },
+  getItemDescriptionMapping: async () => {},
   getItemById: async (itemId) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ITEM_BY_ID,
@@ -81,22 +82,22 @@ contextBridge.exposeInMainWorld('poMasterModule', {
   },
 });
 
-contextBridge.exposeInMainWorld('vendorMasterModule', {
-  createVendor: async (vendorData) => {
+contextBridge.exposeInMainWorld('customerMasterModule', {
+  createCustomer: async (customerData) => {
     return await ipcRenderer.invoke('COMS', {
-      code: comCodes.CREATE_VENDOR,
-      data: vendorData,
+      code: comCodes.CREATE_CUSTOMER,
+      data: customerData,
     });
   },
-  getVendors: async () => {
+  getCustomers: async () => {
     return await ipcRenderer.invoke('COMS', {
-      code: comCodes.GET_VENDORS,
+      code: comCodes.GET_CUSTOMERS,
     });
   },
-  getVendorById: async (vendorId) => {
+  getCustomerById: async (customerId) => {
     return await ipcRenderer.invoke('COMS', {
-      code: comCodes.GET_VENDOR_BY_ID,
-      data: vendorId,
+      code: comCodes.GET_CUSTOMER_BY_ID,
+      data: customerId,
     });
   },
   getCustomerByName: async (customerName) => {

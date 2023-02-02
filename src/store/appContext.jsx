@@ -7,11 +7,10 @@ const AppContext = createContext({
   navMenu: [],
   contentSpinner: null,
   setContentSpinner: (value) => {},
-  // pages: {HOME, CREATE_ITEM_MASTER}
 });
 
 export const AppContextProvider = ({ children }) => {
-  const { HOME, ITEM_MASTER, VENDOR_MASTER, IMPORT } = pages;
+  const { HOME, ITEM_MASTER, CUSTOMER_MASTER, PO_MASTER, IMPORT } = pages;
   const { CREATE, VIEW, EDIT, DELETE } = types;
   const navMenu = [
     {
@@ -50,12 +49,12 @@ export const AppContextProvider = ({ children }) => {
       subMenu: [
         {
           text: 'Create',
-          pageValue: VENDOR_MASTER,
+          pageValue: CUSTOMER_MASTER,
           type: CREATE,
         },
         {
           text: 'View',
-          pageValue: VENDOR_MASTER,
+          pageValue: CUSTOMER_MASTER,
           type: VIEW,
         },
         {
@@ -67,7 +66,7 @@ export const AppContextProvider = ({ children }) => {
         {
           text: 'Import',
           pageValue: IMPORT,
-          type: VENDOR_MASTER,
+          type: CUSTOMER_MASTER,
         },
       ],
     },
@@ -76,9 +75,13 @@ export const AppContextProvider = ({ children }) => {
       subMenu: [
         {
           text: 'Create',
+          pageValue: PO_MASTER,
+          type: CREATE,
         },
         {
           text: 'View',
+          pageValue: PO_MASTER,
+          type: VIEW,
         },
         {
           text: 'Modify',
@@ -112,8 +115,8 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(HOME);
-  const [type, setType] = useState(null);
+  const [page, setPage] = useState(PO_MASTER);
+  const [type, setType] = useState(CREATE);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

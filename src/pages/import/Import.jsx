@@ -11,7 +11,7 @@ import SelectInput from '../../components/ui/SelectInput';
 import ActionButton from '../../components/ui/ActionButton';
 
 function Import({ type }) {
-  // const { ITEM_MASTER, VENDOR_MASTER } = pages;
+  // const { ITEM_MASTER, CUSTOMER_MASTER } = pages;
 
   const { setContentSpinner } = useContext(AppContext);
 
@@ -56,7 +56,7 @@ function Import({ type }) {
         });
       },
     },
-    VENDOR_MASTER: {
+    CUSTOMER_MASTER: {
       title: 'Customer Master',
       fields: [
         {
@@ -92,7 +92,7 @@ function Import({ type }) {
         const customerAddressCol = fieldComponents.customerAddress.value;
         const gstNoCol = fieldComponents.gstNo.value;
         setContentSpinner(true);
-        await vendorMasterModule.importCustomerMaster({
+        await customerMasterModule.importCustomerMaster({
           sheetName,
           start: startNo,
           end: endNo,
