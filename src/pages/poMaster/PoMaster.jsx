@@ -48,8 +48,9 @@ function PoMaster({ type }) {
         descriptionMapping: {},
       };
       for (let i = 0; i < items.length; i++) {
-        itemsTable.drawingNoMapping[items[i].drg_no] = items[i].description;
-        itemsTable.descriptionMapping[items[i].description] = items[i].drg_no;
+        itemsTable.drawingNoMapping[items[i].drawing_no] = items[i].description;
+        itemsTable.descriptionMapping[items[i].description] =
+          items[i].drawing_no;
       }
       setItemsTable(itemsTable);
     }
@@ -84,7 +85,11 @@ function PoMaster({ type }) {
     customerNameRef.ref.current.setValue(poDetails.customerName);
     const tableRows = [];
     for (let i = 0; i < poDetails.poItems.length; i++) {
-      const { drg_no: drawingNo, description, quantity } = poDetails.poItems[i];
+      const {
+        drawing_no: drawingNo,
+        description,
+        quantity,
+      } = poDetails.poItems[i];
       tableRows.push({ index: i, drawingNo, description, quantity });
     }
     dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
@@ -332,7 +337,7 @@ function PoMaster({ type }) {
 
   function isRowValid({ drawingNo, description, quantity }) {
     return (
-      itemsTable.rawItems.map((item) => item.drg_no).includes(drawingNo) &&
+      itemsTable.rawItems.map((item) => item.drawing_no).includes(drawingNo) &&
       itemsTable.drawingNoMapping[drawingNo] === description &&
       +quantity > 0
     );

@@ -38,7 +38,7 @@ const ItemMaster = ({ type }) => {
     descriptionRef.ref.current.setValue(result.description);
   }
 
-  async function submitForm(e) {
+  async function createItem(e) {
     setContentSpinner(true);
     const itemData = {
       drawingNo: drawingNoRef.ref.current.value,
@@ -49,6 +49,31 @@ const ItemMaster = ({ type }) => {
       resetPage();
     }
     setContentSpinner(false);
+  }
+
+  async function editItem(e) {
+    setContentSpinner(true);
+    const itemData = {
+      drawingNo: drawingNoRef.ref.current.value,
+      description: descriptionRef.ref.current.value,
+    };
+    if (itemData.drawingNo !== '') {
+      await itemMasterModule.editItem(itemData);
+      resetPage();
+    }
+    setContentSpinner(false);
+  }
+
+  async function deleteItem(e) {
+    const drawingNo = drawingNoRef.ref.current.value;
+    if (drawingNo !== '') {
+      setContentSpinner(true);
+      const result = await itemMasterModule.deleteItem(drawingNo);
+      setContentSpinner(false);
+      if (result) {
+        changePage('HOME');
+      }
+    }
   }
 
   const modeContent = {
@@ -73,7 +98,7 @@ const ItemMaster = ({ type }) => {
           ref={descriptionRef.ref}
         />
 
-        <ActionButton className='block mx-auto mt-24' onClick={submitForm}>
+        <ActionButton className='block mx-auto mt-24' onClick={createItem}>
           Save
         </ActionButton>
       </Fragment>
@@ -117,6 +142,102 @@ const ItemMaster = ({ type }) => {
           }}
         >
           Back
+        </ActionButton>
+      </Fragment>
+    ),
+    EDIT: (
+      <Fragment>
+        <FormField
+          label='Drawing No'
+          component={SuggestionInput}
+          componentProperties={{
+            name: 'drawingNo',
+            suggestions: itemList,
+            strict: true,
+            extendChangeHandler: () => {
+              setTimeout(() => {
+                const { value, isValid } = drawingNoRef.ref.current;
+                if (isValid) {
+                  getItemDetails(value);
+                }
+              }, 100);
+            },
+            extendFillHandler: (value) => {
+              getItemDetails(value);
+            },
+          }}
+          ref={drawingNoRef.ref}
+        />
+        <FormField
+          label='Description'
+          component={TextInput}
+          componentProperties={{
+            name: 'description',
+            dispatchNavigationShortcut,
+          }}
+          ref={descriptionRef.ref}
+        />
+
+        <div className='flex justify-center gap-x-10 mt-24'>
+          <ActionButton
+            primaryColor='red-500'
+            className=''
+            onClick={(e) => {
+              changePage(pages.HOME);
+            }}
+          >
+            Discard
+          </ActionButton>
+          <ActionButton
+            primaryColor='green-500'
+            className=''
+            onClick={editItem}
+          >
+            Save
+          </ActionButton>
+        </div>
+      </Fragment>
+    ),
+    DELETE: (
+      <Fragment>
+        <FormField
+          label='Drawing No'
+          component={SuggestionInput}
+          componentProperties={{
+            name: 'drawingNo',
+            suggestions: itemList,
+            strict: true,
+            extendChangeHandler: () => {
+              setTimeout(() => {
+                const { value, isValid } = drawingNoRef.ref.current;
+                if (isValid) {
+                  getItemDetails(value);
+                }
+              }, 100);
+            },
+            extendFillHandler: (value) => {
+              getItemDetails(value);
+            },
+          }}
+          ref={drawingNoRef.ref}
+        />
+        <FormField
+          label='Description'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={descriptionRef.ref}
+        />
+
+        <ActionButton
+          primaryColor='red-500'
+          className='block mx-auto mt-24'
+          onClick={(e) => {
+            deleteItem();
+          }}
+        >
+          Delete
         </ActionButton>
       </Fragment>
     ),

@@ -33,9 +33,13 @@ export const AppContextProvider = ({ children }) => {
         },
         {
           text: 'Modify',
+          pageValue: ITEM_MASTER,
+          type: EDIT,
         },
         {
           text: 'Delete',
+          pageValue: ITEM_MASTER,
+          type: DELETE,
         },
         {
           text: 'Import',
@@ -116,7 +120,7 @@ export const AppContextProvider = ({ children }) => {
     },
   ];
   const [page, setPage] = useState(ITEM_MASTER);
-  const [type, setType] = useState(VIEW);
+  const [type, setType] = useState(EDIT);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

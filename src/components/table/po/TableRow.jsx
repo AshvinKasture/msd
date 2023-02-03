@@ -40,7 +40,7 @@ function TableRow({
           value={drawingNo}
           disabled={disabled}
           suggestions={
-            itemsTable ? itemsTable.rawItems.map((item) => item.drg_no) : []
+            itemsTable ? itemsTable.rawItems.map((item) => item.drawing_no) : []
           }
           extendBlurHandler={
             setDrawingNo &&

@@ -41,22 +41,21 @@ contextBridge.exposeInMainWorld('itemMasterModule', {
       code: comCodes.GET_ITEMS,
     });
   },
-  getItemDescriptionMapping: async () => {},
-  getItemById: async (itemId) => {
-    return await ipcRenderer.invoke('COMS', {
-      code: comCodes.GET_ITEM_BY_ID,
-      data: itemId,
-    });
-  },
-  getItemByDrawingNo: async (drawingNo) => {
-    return await ipcRenderer.invoke('COMS', {
-      code: comCodes.GET_ITEM_BY_DRAWING_NO,
-      data: drawingNo,
-    });
-  },
   getItemDetails: async (drawingNo) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ITEM_DETAILS,
+      data: drawingNo,
+    });
+  },
+  editItem: async (itemData) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.EDIT_ITEM,
+      data: itemData,
+    });
+  },
+  deleteItem: async (drawingNo) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.DELETE_ITEM,
       data: drawingNo,
     });
   },

@@ -19,7 +19,7 @@ function TestPage() {
   useEffect(() => {
     async function getItems() {
       const items = await itemMasterModule.getItems();
-      setSuggestions(items.map((item) => item.drg_no));
+      setSuggestions(items.map((item) => item.drawing_no));
     }
     getItems();
     async function getCustomers() {

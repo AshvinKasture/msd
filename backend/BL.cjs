@@ -78,12 +78,12 @@ class BusinessLayer {
           return await this.createItem(data);
         case comCodes.GET_ITEMS:
           return await this.getItems();
-        case comCodes.GET_ITEM_BY_ID:
-          return await this.getItemById(data);
-        case comCodes.GET_ITEM_BY_DRAWING_NO:
-          return await this.getItemByDrawingNo(data);
         case comCodes.GET_ITEM_DETAILS:
           return await this.getItemDetails(data);
+        case comCodes.EDIT_ITEM:
+          return await this.editItem(data);
+        case comCodes.DELETE_ITEM:
+          return await this.deleteItem(data);
         case comCodes.IMPORT_ITEM_MASTER:
           await this.importItemMaster(data);
           break;
@@ -184,24 +184,6 @@ class BusinessLayer {
     }
   }
 
-  async getItemById(itemId) {
-    try {
-      const result = await this.db.exec({
-        query: 'SELECT * FROM item_master WHERE item_id=$itemId;',
-        params: {
-          $itemId: itemId,
-        },
-      });
-      if (result.length === 1) {
-        return result[0];
-      } else {
-        throw Error('Did not get a single item in query');
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async getItemByDrawingNo(drawingNo) {
     try {
       const result = await this.db.exec({
@@ -220,12 +202,13 @@ class BusinessLayer {
     }
   }
 
-  async checkIfItemExists(itemId) {
+  async checkIfItemExists(drawingNo) {
     try {
       const result = await this.db.exec({
-        query: 'SELECT item_id FROM item_master WHERE item_id=$itemId;',
+        query:
+          'SELECT drawing_no FROM item_master WHERE drawing_no=$drawingNo;',
         params: {
-          $itemId: itemId,
+          $drawingNo: drawingNo,
         },
       });
       return result.length === 1;
@@ -246,6 +229,45 @@ class BusinessLayer {
         throw Error('Did not get single item master');
       }
       return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async editItem(itemData) {
+    try {
+      const { drawingNo, description } = itemData;
+      if (await this.checkIfItemExists(drawingNo)) {
+        await this.db.exec({
+          query:
+            'UPDATE item_master SET description=$description WHERE drawing_no=$drawingNo',
+          params: {
+            $drawingNo: drawingNo,
+            $description: description,
+          },
+        });
+        await this.windowHandeler.showInfoBox({ message: 'Item updated' });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async deleteItem(drawingNo) {
+    try {
+      // console.log(drawingNo, await this.checkIfCustomerExists(drawingNo));
+      if (await this.checkIfItemExists(drawingNo)) {
+        await this.db.exec({
+          query: 'DELETE FROM item_master WHERE drawing_no=$drawingNo',
+          params: {
+            $drawingNo: drawingNo,
+          },
+        });
+        await this.windowHandeler.showInfoBox({
+          message: `Item ${drawingNo} deleted`,
+        });
+        return true;
+      }
     } catch (error) {
       console.error(error);
     }
