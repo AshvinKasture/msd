@@ -115,8 +115,8 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(CUSTOMER_MASTER);
-  const [type, setType] = useState(CREATE);
+  const [page, setPage] = useState(ITEM_MASTER);
+  const [type, setType] = useState(VIEW);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

@@ -26,7 +26,7 @@ class BusinessLayer {
     const queryList = [
       {
         query:
-          'CREATE TABLE item_master(item_id INTEGER PRIMARY KEY AUTOINCREMENT, drg_no VARCHAR(10), description TEXT)',
+          'CREATE TABLE item_master(item_id INTEGER PRIMARY KEY AUTOINCREMENT, drawing_no VARCHAR(10), description TEXT)',
       },
       {
         query:
@@ -82,6 +82,8 @@ class BusinessLayer {
           return await this.getItemById(data);
         case comCodes.GET_ITEM_BY_DRAWING_NO:
           return await this.getItemByDrawingNo(data);
+        case comCodes.GET_ITEM_DETAILS:
+          return await this.getItemDetails(data);
         case comCodes.IMPORT_ITEM_MASTER:
           await this.importItemMaster(data);
           break;
@@ -154,7 +156,7 @@ class BusinessLayer {
       }
       const response = await this.db.exec({
         query:
-          'INSERT INTO item_master(drg_no, description) VALUES($drgNo, $description);',
+          'INSERT INTO item_master(drawing_no, description) VALUES($drgNo, $description);',
         params: {
           $drgNo: drawingNo,
           $description: description,
@@ -174,7 +176,7 @@ class BusinessLayer {
   async getItems() {
     try {
       const result = await this.db.exec({
-        query: 'SELECT item_id, drg_no, description FROM item_master;',
+        query: 'SELECT item_id, drawing_no, description FROM item_master;',
       });
       return result;
     } catch (error) {
@@ -203,7 +205,7 @@ class BusinessLayer {
   async getItemByDrawingNo(drawingNo) {
     try {
       const result = await this.db.exec({
-        query: 'SELECT * FROM item_master WHERE drg_no=$drgNo',
+        query: 'SELECT * FROM item_master WHERE drawing_no=$drgNo',
         params: {
           $drgNo: drawingNo,
         },
@@ -232,6 +234,23 @@ class BusinessLayer {
     }
   }
 
+  async getItemDetails(drawingNo) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT * FROM item_master WHERE drawing_no=$drawingNo',
+        params: {
+          $drawingNo: drawingNo,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Did not get single item master');
+      }
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async importItemMaster(options) {
     try {
       const { sheetName, start, end, cols } = options;
@@ -255,7 +274,7 @@ class BusinessLayer {
         if (!exists) {
           await this.db.exec({
             query:
-              'INSERT INTO item_master(drg_no, description) VALUES($drgNo, $description)',
+              'INSERT INTO item_master(drawing_no, description) VALUES($drgNo, $description)',
             params: {
               $drgNo: drawingNo,
               $description: description,

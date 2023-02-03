@@ -1,126 +1,79 @@
 import React, { Fragment, useEffect, useState, useContext } from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import ActionButton from '../../components/ui/ActionButton';
-import useForm from '../../hooks/useForm';
 import AppContext from '../../store/appContext';
-import { isEmpty } from '../../helpers/basicValidations';
-import FormField from '../../components/ui/FormField';
-import Input from '../../components/ui/Input';
-import SuggestionInput from '../../components/ui/SuggestionInput';
+import FormField from '../../components/ui/inputs/FormField/FormField';
+import TextInput from '../../components/ui/inputs/TextInput/TextInput';
+import SuggestionInput from '../../components/ui/inputs/SuggestionInput/SuggestionInput';
+import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 
 const ItemMaster = ({ type }) => {
-  const { CREATE, VIEW, EDIT, DELETE } = types;
-  const { changePage } = useContext(AppContext);
-  const { drawingNoName, descriptionName } = {
-    drawingNoName: 'drawingNo',
-    descriptionName: 'description',
-  };
+  const { changePage, setContentSpinner } = useContext(AppContext);
+  const [itemList, setItemList] = useState([]);
 
-  useEffect(() => {
-    if ([VIEW, EDIT, DELETE].includes(type)) {
-      async function getItemsFromDatabase() {
-        const items = await itemMasterModule.getItems();
-        dispatchState({
-          type: 'SET_SUGGESTIONS',
-          payload: {
-            fieldName: drawingNoName,
-            suggestions: items.map((item) => item.drg_no),
-          },
-        });
-      }
-      getItemsFromDatabase();
-    }
-  }, [type]);
-
-  const initialProperties = [
-    {
-      label: 'Drawing No',
-      name: drawingNoName,
-      type: 'text',
-      validationFunction: function (value) {
-        return !isEmpty(value);
-      },
-    },
-    {
-      label: 'Descrption',
-      name: descriptionName,
-      type: 'text',
-      validationFunction: (value) => {
-        return !isEmpty(value);
-      },
-    },
-  ];
-
-  const [
-    {
-      components: {
-        [drawingNoName]: drawingNoComponent,
-        [descriptionName]: descriptionComponent,
-      },
-      isFormValid,
-    },
-    dispatchState,
-  ] = useForm(initialProperties);
-
-  useEffect(() => {
-    if ([VIEW, EDIT, DELETE].includes(type)) {
-      const checkIfValueChanged = async function () {
-        const { value, isValid } = drawingNoComponent;
-        if (isValid) {
-          await fillValues(value);
-        }
-      };
-      checkIfValueChanged();
-    }
-  }, [drawingNoComponent.value, drawingNoComponent.isValid]);
-
-  useEffect(() => {
-    dispatchState({ type: 'RESET_FORM' });
-  }, [type]);
-
-  async function fillValues(drawingNo) {
-    const { description } = await itemMasterModule.getItemByDrawingNo(
-      drawingNo
-    );
-    dispatchState({
-      type: 'SET_VALUE',
-      payload: { fieldName: descriptionName, value: description },
+  const [[drawingNoRef, descriptionRef], dispatchNavigationShortcut] =
+    useNavigationShortcuts({
+      sequence: ['drawingNo', 'description'],
+      defaultFocused: 'drawingNo',
     });
+
+  useEffect(() => {
+    getItemList();
+    resetPage();
+  }, [type]);
+
+  async function getItemList() {
+    const items = await itemMasterModule.getItems();
+    setItemList(items.map((item) => item.drawing_no));
+  }
+
+  function resetPage() {
+    drawingNoRef.ref.current.reset();
+    descriptionRef.ref.current.reset();
+  }
+
+  async function getItemDetails(value) {
+    const result = await itemMasterModule.getItemDetails(value);
+
+    descriptionRef.ref.current.setValue(result.description);
   }
 
   async function submitForm(e) {
-    if (isFormValid) {
-      const drawingNo = drawingNoComponent.value;
-      const description = descriptionComponent.value;
-      const result = await itemMasterModule.createItem({
-        drawingNo,
-        description,
-      });
-      console.log(result);
-      if (result) {
-        dispatchState({ type: 'RESET_FORM' });
-      }
-    } else {
-      dispatchState({ type: 'SHOW_VALIDITY' });
+    setContentSpinner(true);
+    const itemData = {
+      drawingNo: drawingNoRef.ref.current.value,
+      description: descriptionRef.ref.current.value,
+    };
+    if (itemData.drawingNo !== '') {
+      await itemMasterModule.createItem(itemData);
+      resetPage();
     }
+    setContentSpinner(false);
   }
 
   const modeContent = {
     CREATE: (
       <Fragment>
         <FormField
-          properties={drawingNoComponent}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Drawing No'
+          component={TextInput}
+          componentProperties={{
+            name: 'drawingNo',
+            dispatchNavigationShortcut,
+          }}
+          ref={drawingNoRef.ref}
         />
-
         <FormField
-          properties={descriptionComponent}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Description'
+          component={TextInput}
+          componentProperties={{
+            name: 'description',
+            dispatchNavigationShortcut,
+          }}
+          ref={descriptionRef.ref}
         />
 
-        <ActionButton className='block mx-auto mt-10 mb-5' onClick={submitForm}>
+        <ActionButton className='block mx-auto mt-24' onClick={submitForm}>
           Save
         </ActionButton>
       </Fragment>
@@ -128,19 +81,37 @@ const ItemMaster = ({ type }) => {
     VIEW: (
       <Fragment>
         <FormField
-          properties={drawingNoComponent}
+          label='Drawing No'
           component={SuggestionInput}
-          dispatchState={dispatchState}
+          componentProperties={{
+            name: 'drawingNo',
+            suggestions: itemList,
+            strict: true,
+            extendChangeHandler: () => {
+              setTimeout(() => {
+                const { value, isValid } = drawingNoRef.ref.current;
+                if (isValid) {
+                  getItemDetails(value);
+                }
+              }, 100);
+            },
+            extendFillHandler: (value) => {
+              getItemDetails(value);
+            },
+          }}
+          ref={drawingNoRef.ref}
         />
-
         <FormField
-          properties={{ ...descriptionComponent, disabled: true }}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Description'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={descriptionRef.ref}
         />
 
         <ActionButton
-          className='block mx-auto mt-10 mb-5'
+          className='block mx-auto mt-24'
           onClick={(e) => {
             changePage(pages.HOME);
           }}

@@ -26,7 +26,6 @@ const SuggestionInput = forwardRef(
     },
     ref
   ) => {
-    // console.log(suggestions);
     const inputRef = useRef();
     const [
       { text, filteredSuggestions, showSuggestionBox, isValid },

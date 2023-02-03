@@ -54,6 +54,12 @@ contextBridge.exposeInMainWorld('itemMasterModule', {
       data: drawingNo,
     });
   },
+  getItemDetails: async (drawingNo) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_ITEM_DETAILS,
+      data: drawingNo,
+    });
+  },
   importItemMaster: (options) => {
     ipcRenderer.invoke('COMS', {
       code: comCodes.IMPORT_ITEM_MASTER,
