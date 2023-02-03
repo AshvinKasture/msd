@@ -123,6 +123,18 @@ contextBridge.exposeInMainWorld('customerMasterModule', {
       data: customerName,
     });
   },
+  editCustomer: async (customerData) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.EDIT_CUSTOMER,
+      data: customerData,
+    });
+  },
+  deleteCustomer: async (customerName) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.DELETE_CUSTOMER,
+      data: customerName,
+    });
+  },
   importCustomerMaster: (options) => {
     ipcRenderer.invoke('COMS', {
       code: comCodes.IMPORT_CUSTOMER_MASTER,

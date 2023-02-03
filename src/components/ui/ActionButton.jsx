@@ -3,19 +3,15 @@ import { twMerge } from 'tailwind-merge';
 
 const ActionButton = ({
   children,
-  primaryColor = 'blue-500',
-  secondaryColor = 'white',
-  borderColor = primaryColor,
   className: classes,
   onClick: clickHandler,
 }) => {
+  const classList = twMerge(
+    `rounded-md text-white bg-blue-500 px-4 py-2 text-xl font-semibold  ${classes}`
+  );
+  // console.log(classList);
   return (
-    <button
-      className={twMerge(
-        `rounded-md text-${secondaryColor} bg-${primaryColor} border-2 border-${borderColor} px-4 py-2 text-xl font-semibold ${classes}`
-      )}
-      onClick={clickHandler}
-    >
+    <button className={classList} onClick={clickHandler}>
       {children}
     </button>
   );

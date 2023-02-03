@@ -180,19 +180,14 @@ const ItemMaster = ({ type }) => {
 
         <div className='flex justify-center gap-x-10 mt-24'>
           <ActionButton
-            primaryColor='red-500'
-            className=''
+            className='bg-red-500'
             onClick={(e) => {
-              changePage(pages.HOME);
+              resetPage();
             }}
           >
             Discard
           </ActionButton>
-          <ActionButton
-            primaryColor='green-500'
-            className=''
-            onClick={editItem}
-          >
+          <ActionButton className='bg-green-500' onClick={editItem}>
             Save
           </ActionButton>
         </div>
@@ -231,8 +226,7 @@ const ItemMaster = ({ type }) => {
         />
 
         <ActionButton
-          primaryColor='red-500'
-          className='block mx-auto mt-24'
+          className='block mx-auto mt-24 bg-red-500'
           onClick={(e) => {
             deleteItem();
           }}

@@ -106,6 +106,10 @@ class BusinessLayer {
           return await this.getCustomerByName(data);
         case comCodes.GET_CUSTOMER_DETAILS:
           return await this.getCustomerDetails(data);
+        case comCodes.EDIT_CUSTOMER:
+          return await this.editCustomer(data);
+        case comCodes.DELETE_CUSTOMER:
+          return await this.deleteCustomer(data);
         case comCodes.IMPORT_CUSTOMER_MASTER:
           return await this.importCustomerMaster(data);
         default:
@@ -519,6 +523,46 @@ class BusinessLayer {
         throw Error('Did not get single customer');
       }
       return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async editCustomer(customerData) {
+    try {
+      const { customerName, customerAddress, gstNo } = customerData;
+      if (await this.checkIfCustomerExists(customerName)) {
+        await this.db.exec({
+          query:
+            'UPDATE customer_master SET customer_address=$customerAddress, gst_no=$gstNo WHERE customer_name=$customerName',
+          params: {
+            $customerName: customerName,
+            $customerAddress: customerAddress,
+            $gstNo: gstNo,
+          },
+        });
+        await this.windowHandeler.showInfoBox({ message: 'Customer updated' });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async deleteCustomer(customerName) {
+    try {
+      if (await this.checkIfCustomerExists(customerName)) {
+        await this.db.exec({
+          query:
+            'DELETE FROM customer_master WHERE customer_name=$customerName',
+          params: {
+            $customerName: customerName,
+          },
+        });
+        await this.windowHandeler.showInfoBox({
+          message: `Customer ${customerName} deleted`,
+        });
+        return true;
+      }
     } catch (error) {
       console.error(error);
     }
