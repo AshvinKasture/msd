@@ -112,6 +112,12 @@ contextBridge.exposeInMainWorld('customerMasterModule', {
       data: customerName,
     });
   },
+  getCustomerDetails: async (customerName) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_CUSTOMER_DETAILS,
+      data: customerName,
+    });
+  },
   importCustomerMaster: (options) => {
     ipcRenderer.invoke('COMS', {
       code: comCodes.IMPORT_CUSTOMER_MASTER,

@@ -1,144 +1,99 @@
-import React, { Fragment, useEffect, useContext } from 'react';
+import React, { Fragment, useState, useEffect, useContext } from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
-import useForm from '../../hooks/useForm';
 import ActionButton from '../../components/ui/ActionButton';
-import { isEmpty } from '../../helpers/basicValidations';
 import AppContext from '../../store/appContext';
-import FormField from '../../components/ui/FormField';
-import Input from '../../components/ui/Input';
-import SuggestionInput from '../../components/ui/SuggestionInput';
+import FormField from '../../components/ui/inputs/FormField/FormField';
+import TextInput from '../../components/ui/inputs/TextInput/TextInput';
+import SuggestionInput from '../../components/ui/inputs/SuggestionInput/SuggestionInput';
+import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
+import { isGstNo } from '../../helpers/basicValidations';
 
 function CustomerMaster({ type }) {
-  const { CREATE, VIEW, EDIT, DELETE } = types;
-  const { changePage } = useContext(AppContext);
-  const initialProperties = [
-    {
-      label: 'Customer Name',
-      name: 'customerName',
-      type: 'text',
-      validationFunction: function (value) {
-        return !isEmpty(value);
-      },
-    },
-    {
-      label: 'Customer Adrress',
-      name: 'customerAddress',
-      type: 'text',
-      validationFunction: function (value) {
-        return !isEmpty(value);
-      },
-    },
-    {
-      label: 'GST No',
-      name: 'gstNo',
-      type: 'text',
-      validationFunction: function (value) {
-        return !isEmpty(value);
-      },
-    },
-  ];
+  const { changePage, setContentSpinner } = useContext(AppContext);
+  const [customerList, setCustomerList] = useState([]);
 
   const [
-    {
-      components: {
-        customerName: customerNameComponent,
-        customerAddress: customerAddressComponent,
-        gstNo: gstNoComponent,
-      },
-      isFormValid,
-    },
-    dispatchState,
-  ] = useForm(initialProperties);
+    [customerNameRef, customerAddressRef, gstNoRef],
+    dispatchNavigationShortcut,
+  ] = useNavigationShortcuts({
+    sequence: ['customerName', 'customerAddress', 'gstNo'],
+    defaultFocused: 'customerName',
+  });
 
   useEffect(() => {
-    if ([VIEW, EDIT, DELETE].includes(type)) {
-      async function getCustomersFromDatabase() {
-        const customers = await customerMasterModule.getCustomers();
-        dispatchState({
-          type: 'SET_SUGGESTIONS',
-          payload: {
-            fieldName: 'customerName',
-            suggestions: customers.map((customer) => customer.customer_name),
-          },
-        });
-      }
-      getCustomersFromDatabase();
-    }
+    getCustomerList();
+    resetPage();
   }, [type]);
 
-  async function fillValues(customerName) {
-    const { customer_address: customerAddress, gst_no: gstNo } =
-      await customerMasterModule.getCustomerByName(customerName);
-    dispatchState({
-      type: 'SET_VALUE',
-      payload: {
-        fieldName: 'customerAddress',
-        value: customerAddress,
-      },
-    });
-    dispatchState({
-      type: 'SET_VALUE',
-      payload: {
-        fieldName: 'gstNo',
-        value: gstNo,
-      },
-    });
+  async function getCustomerList() {
+    const customers = await customerMasterModule.getCustomers();
+    setCustomerList(
+      customers.map((customerItem) => customerItem.customer_name)
+    );
   }
 
-  useEffect(() => {
-    if ([VIEW, EDIT, DELETE].includes(type)) {
-      const checkIfValueChanged = async function () {
-        const { value, isValid } = customerNameComponent;
-        if (isValid) {
-          await fillValues(value);
-        }
-      };
-      checkIfValueChanged();
-    }
-  }, [customerNameComponent.value, customerNameComponent.isValid]);
-
-  useEffect(() => {
-    dispatchState({ type: 'RESET_FORM' });
-  }, [type]);
-
   async function submitForm(e) {
-    if (isFormValid) {
-      const customerName = customerNameComponent.value;
-      const customerAddress = customerAddressComponent.value;
-      const gstNo = gstNoComponent.value;
-      const result = await customerMasterModule.createCustomer({
-        customerName,
-        customerAddress,
-        gstNo,
-      });
-      if (result) {
-        dispatchState({ type: 'RESET_FORM' });
-      }
-    } else {
-      dispatchState({ type: 'SHOW_VALIDITY' });
+    setContentSpinner(true);
+    const customerData = {
+      customerName: customerNameRef.ref.current.value,
+      customerAddress: customerAddressRef.ref.current.value,
+      gstNo: gstNoRef.ref.current.value,
+    };
+    if (customerData.customerName !== '') {
+      await customerMasterModule.createCustomer(customerData);
+      resetPage();
     }
+    setContentSpinner(false);
+  }
+
+  function resetPage() {
+    customerNameRef.ref.current.reset();
+    customerAddressRef.ref.current.reset();
+    gstNoRef.ref.current.reset();
+  }
+
+  async function getCustomerDetails(value) {
+    const { customer_address: customerAddress, gst_no: gstNo } =
+      await customerMasterModule.getCustomerDetails(value);
+    customerAddressRef.ref.current.setValue(customerAddress);
+    gstNoRef.ref.current.setValue(gstNo);
   }
 
   const modeContent = {
     CREATE: (
       <Fragment>
         <FormField
-          properties={customerNameComponent}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Customer Name'
+          component={TextInput}
+          componentProperties={{
+            name: 'customerName',
+            dispatchNavigationShortcut,
+          }}
+          ref={customerNameRef.ref}
         />
         <FormField
-          properties={customerAddressComponent}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Customer Address'
+          component={TextInput}
+          componentProperties={{
+            name: 'customerAddress',
+            dispatchNavigationShortcut,
+          }}
+          ref={customerAddressRef.ref}
         />
         <FormField
-          properties={gstNoComponent}
-          component={Input}
-          dispatchState={dispatchState}
+          label='GST No'
+          component={TextInput}
+          componentProperties={{
+            name: 'gstNo',
+            acceptedInput: ({ oldValue, newValue }) => {
+              return isGstNo(newValue) ? newValue.toUpperCase() : oldValue;
+            },
+            dispatchNavigationShortcut,
+          }}
+          ref={gstNoRef.ref}
         />
 
-        <ActionButton className='block mx-auto' onClick={submitForm}>
+        <ActionButton className='block mx-auto mt-24' onClick={submitForm}>
           Save
         </ActionButton>
       </Fragment>
@@ -146,22 +101,44 @@ function CustomerMaster({ type }) {
     VIEW: (
       <Fragment>
         <FormField
-          properties={customerNameComponent}
+          label='Customer Name'
           component={SuggestionInput}
-          dispatchState={dispatchState}
+          componentProperties={{
+            name: 'customerName',
+            suggestions: customerList,
+            strict: true,
+            extendChangeHandler: () => {
+              setTimeout(() => {
+                const { value, isValid } = customerNameRef.ref.current;
+                if (isValid) {
+                  getCustomerDetails(value);
+                }
+              }, 100);
+            },
+            extendFillHandler: (value) => {
+              getCustomerDetails(value);
+            },
+          }}
+          ref={customerNameRef.ref}
         />
         <FormField
-          properties={{ ...customerAddressComponent, disabled: true }}
-          component={Input}
-          dispatchState={dispatchState}
+          label='Customer Address'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={customerAddressRef.ref}
         />
         <FormField
-          properties={{ ...gstNoComponent, disabled: true }}
-          component={Input}
-          dispatchState={dispatchState}
+          label='GST No'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={gstNoRef.ref}
         />
         <ActionButton
-          className='block mx-auto'
+          className='block mx-auto mt-24'
           onClick={(e) => {
             changePage(pages.HOME);
           }}

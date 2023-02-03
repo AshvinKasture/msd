@@ -102,6 +102,8 @@ class BusinessLayer {
           return await this.getCustomerById(data);
         case comCodes.GET_CUSTOMER_BY_NAME:
           return await this.getCustomerByName(data);
+        case comCodes.GET_CUSTOMER_DETAILS:
+          return await this.getCustomerDetails(data);
         case comCodes.IMPORT_CUSTOMER_MASTER:
           return await this.importCustomerMaster(data);
         default:
@@ -403,7 +405,7 @@ class BusinessLayer {
   async getCustomers() {
     try {
       return await this.db.exec({
-        query: 'SELECT customer_id, customer_name FROM customer_master;',
+        query: 'SELECT * FROM customer_master;',
       });
     } catch (error) {
       console.error(error);
@@ -458,6 +460,24 @@ class BusinessLayer {
         },
       });
       return result.length === 1;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getCustomerDetails(customerName) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT * FROM customer_master where customer_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Did not get single customer');
+      }
+      return result[0];
     } catch (error) {
       console.error(error);
     }

@@ -18,3 +18,7 @@ export function isPositiveInteger(value) {
 export function makeCaps(value) {
   return value.toUpperCase();
 }
+
+export function isGstNo(value) {
+  return value.match(/^( )?[a-zA-Z0-9]*$/g) !== null;
+}
