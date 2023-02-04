@@ -9,12 +9,15 @@ function TestPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [customers, setCustomers] = useState([]);
 
-  const [[nameRef, ageRef, customerRef, itemRef], dispatchNavigationShortcut] =
-    useNavigationShortcuts({
-      sequence: ['name', 'age', 'customer', 'item'],
-      defaultFocused: 'name',
-      lastAction: submitHandler,
-    });
+  const [
+    [nameRef, ageRef, customerRef, itemRef],
+    dispatchNavigationShortcut,
+    _,
+  ] = useNavigationShortcuts({
+    sequence: ['name', 'age', 'customer', 'item'],
+    defaultFocused: 'name',
+    lastAction: submitHandler,
+  });
 
   useEffect(() => {
     async function getItems() {

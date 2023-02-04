@@ -15,6 +15,7 @@ function CustomerMaster({ type }) {
   const [
     [customerNameRef, customerAddressRef, gstNoRef],
     dispatchNavigationShortcut,
+    _,
   ] = useNavigationShortcuts({
     sequence: ['customerName', 'customerAddress', 'gstNo'],
     defaultFocused: 'customerName',

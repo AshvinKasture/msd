@@ -34,7 +34,13 @@ function useNavigationShortcuts({
     }
   }
 
-  return [references, dispatchNavigationShortcut];
+  function setFocusedElement(name) {
+    const indexNo = sequence.indexOf(name);
+    currentSequenceNo = indexNo >= 0 ? indexNo : currentSequenceNo;
+    // console.log({ name, indexNo, currentSequenceNo });
+  }
+
+  return [references, dispatchNavigationShortcut, setFocusedElement];
 }
 
 function getSequenceNo(sequence, name) {

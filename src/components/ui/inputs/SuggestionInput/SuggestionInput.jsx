@@ -166,13 +166,17 @@ const SuggestionInput = forwardRef(
       inputRef.current.focus();
     }
 
+    function setValue(value) {
+      dispatchState({ type: 'SET_VALUE', payload: value });
+    }
+
     function reset() {
       // inputRef.current.reset();
       dispatchState({ type: 'RESET' });
     }
 
     useImperativeHandle(ref, () => {
-      return { value: text, isValid, focus, reset };
+      return { value: text, isValid, focus, setValue, reset };
     });
 
     return (

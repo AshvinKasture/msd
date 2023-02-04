@@ -91,6 +91,18 @@ contextBridge.exposeInMainWorld('poMasterModule', {
       data: poNumber,
     });
   },
+  editPo: async (poData) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.EDIT_PO,
+      data: poData,
+    });
+  },
+  deletePo: async (poNumber) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.DELETE_PO,
+      data: poNumber,
+    });
+  },
 });
 
 contextBridge.exposeInMainWorld('customerMasterModule', {

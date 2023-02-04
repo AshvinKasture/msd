@@ -11,7 +11,7 @@ const ItemMaster = ({ type }) => {
   const { changePage, setContentSpinner } = useContext(AppContext);
   const [itemList, setItemList] = useState([]);
 
-  const [[drawingNoRef, descriptionRef], dispatchNavigationShortcut] =
+  const [[drawingNoRef, descriptionRef], dispatchNavigationShortcut, _] =
     useNavigationShortcuts({
       sequence: ['drawingNo', 'description'],
       defaultFocused: 'drawingNo',

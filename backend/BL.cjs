@@ -92,10 +92,14 @@ class BusinessLayer {
           break;
         case comCodes.GET_ALL_PO:
           return await this.getAllPo();
-        case comCodes.GET_ITEMS_OF_PO:
-          return await this.getItemsOfPo(data);
+        // case comCodes.GET_ITEMS_OF_PO:
+        //   return await this.getItemsOfPo(data);
         case comCodes.GET_PO_DETAILS:
           return await this.getPoDetails(data);
+        case comCodes.EDIT_PO:
+          return await this.editPo(data);
+        case comCodes.DELETE_PO:
+          return await this.deletePo(data);
         case comCodes.CREATE_CUSTOMER:
           return await this.createCustomer(data);
         case comCodes.GET_CUSTOMERS:
@@ -326,6 +330,12 @@ class BusinessLayer {
 
   async createPo({ poNumber, customerName, itemRows }) {
     try {
+      if (await this.checkIfPoExists(poNumber)) {
+        await this.windowHandeler.showErrorBox({
+          message: `PO ${poNumber} already exists`,
+        });
+        return false;
+      }
       const customer = await this.getCustomerByName(customerName);
       if (customer === null) {
         throw Error(`Customer ${customerName} does not exist`);
@@ -381,6 +391,23 @@ class BusinessLayer {
     });
   }
 
+  async checkIfPoExists(poNumber) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT po_no FROM po_master WHERE po_no=$poNumber',
+        params: {
+          $poNumber: poNumber,
+        },
+      });
+      if (result.length > 1) {
+        throw Error('Did not get a single po');
+      }
+      return result.length === 1;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async getPoFromPoNumber(poNumber) {
     const result = await this.db.exec({
       query: 'SELECT * FROM po_master WHERE po_no=$poNumber',
@@ -414,6 +441,90 @@ class BusinessLayer {
       });
       poDetails.poItems = result;
       return poDetails;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async editPo(poData) {
+    try {
+      const { poNumber, customerName, itemRows } = poData;
+      if (!(await this.checkIfPoExists(poNumber))) {
+        await this.windowHandeler.showErrorBox({
+          message: `PO ${poNumber} does not exist`,
+        });
+        return false;
+      }
+      if (!(await this.checkIfCustomerExists(customerName))) {
+        await this.windowHandeler.showErrorBox({
+          message: `Customer ${customerName} does not exist`,
+        });
+        return false;
+      }
+      const customerId = (await this.getCustomerDetails(customerName))
+        .customer_id;
+      await this.db.exec({
+        query:
+          'UPDATE po_master SET customer_id=$customerId WHERE po_no=$poNumber',
+        params: {
+          $customerId: customerId,
+          $poNumber: poNumber,
+        },
+      });
+      // console.log(await this.getPoDetails(poNumber));
+      const { poId } = await this.getPoDetails(poNumber);
+      console.log(poId);
+      await this.db.exec({
+        query: 'DELETE FROM po_items WHERE po_id=$poId',
+        params: {
+          $poId: poId,
+        },
+      });
+
+      for (let i = 0; i < itemRows.length; i++) {
+        const { drawingNo, quantity } = itemRows[i];
+        const itemId = (await this.getItemByDrawingNo(drawingNo)).item_id;
+        await this.db.exec({
+          query:
+            'INSERT INTO po_items(po_id, item_id, quantity) VALUES($poId, $itemId, $quantity)',
+          params: {
+            $poId: poId,
+            $itemId: itemId,
+            $quantity: quantity,
+          },
+        });
+      }
+
+      await this.windowHandeler.showInfoBox({
+        message: `PO ${poNumber} updated`,
+      });
+      return true;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async deletePo(poNumber) {
+    try {
+      if (await this.checkIfPoExists(poNumber)) {
+        const { poId } = await this.getPoDetails(poNumber);
+        await this.db.exec({
+          query: 'DELETE FROM po_items WHERE po_id=$poId',
+          params: {
+            $poId: poId,
+          },
+        });
+        await this.db.exec({
+          query: 'DELETE FROM po_master WHERE po_id=$poId',
+          params: {
+            $poId: poId,
+          },
+        });
+        await this.windowHandeler.showInfoBox({
+          message: `PO ${poNumber} deleted`,
+        });
+        return true;
+      }
     } catch (error) {
       console.error(error);
     }

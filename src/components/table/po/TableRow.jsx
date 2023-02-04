@@ -3,25 +3,33 @@ import TextInput from '../../../components/ui/inputs/TextInput/TextInput';
 import SuggestionInput from '../../../components/ui/inputs/SuggestionInput/SuggestionInput';
 import useNavigationShortcuts from '../../../hooks/useNavigationShortcuts';
 import { isPositiveInteger } from '../../../helpers/basicValidations';
+import DeleteIcon from '../../../assets/deleteIcon';
 
 function TableRow({
   rowData: { index, drawingNo, description, quantity },
   disabled = false,
-  addRow = null,
+  lastActionHandler = null,
   setDrawingNo = null,
   setDescription = null,
   setQuantity = null,
   itemsTable = null,
   focusFirstElement = false,
+  disableDelete = false,
+  deleteRowHandler = null,
 }) {
   const [
     [drawingNoRef, descriptionRef, quantityRef],
     dispatchNavigationShortcut,
+    setFocusedElement,
   ] = useCallback(
     useNavigationShortcuts({
       sequence: ['drawingNo', 'description', 'quantity'],
       defaultFocused: 'drawingNo',
-      lastAction: addRow,
+      lastAction: () => {
+        if (lastActionHandler !== null) {
+          lastActionHandler(index);
+        }
+      },
     }),
     []
   );
@@ -30,12 +38,17 @@ function TableRow({
     if (focusFirstElement) {
       drawingNoRef.ref.current.focus();
     }
-  }, []);
+    setFocusedElement('drawingNo');
+  }, [focusFirstElement]);
 
   return (
     <div className='table-row'>
+      <div className='table-cell py-2 border border-black text-center'>
+        {index + 1}.
+      </div>
       <div className='table-cell p-2 border border-black'>
         <SuggestionInput
+          width='full'
           name='drawingNo'
           value={drawingNo}
           disabled={disabled}
@@ -77,6 +90,7 @@ function TableRow({
       </div>
       <div className='table-cell p-2 border border-black'>
         <TextInput
+          width='full'
           name='quantity'
           value={quantity}
           disabled={disabled}
@@ -90,6 +104,21 @@ function TableRow({
           className='outline-0'
           ref={quantityRef.ref}
         />
+      </div>
+      <div className='table-cell p-2 border border-black'>
+        <div className='flex justify-center'>
+          <button
+            disabled={disableDelete}
+            className={`${disableDelete && 'cursor-not-allowed'}`}
+            onClick={() => {
+              if (deleteRowHandler !== null) {
+                deleteRowHandler(index);
+              }
+            }}
+          >
+            <DeleteIcon disabled={disableDelete} />
+          </button>
+        </div>
       </div>
     </div>
   );
