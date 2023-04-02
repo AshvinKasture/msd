@@ -10,7 +10,15 @@ const AppContext = createContext({
 });
 
 export const AppContextProvider = ({ children }) => {
-  const { HOME, ITEM_MASTER, CUSTOMER_MASTER, PO_MASTER, IMPORT } = pages;
+  const {
+    HOME,
+    ITEM_MASTER,
+    CUSTOMER_MASTER,
+    PO_MASTER,
+    DELIVERY_CHALLAN,
+    IMPORT,
+    TEST,
+  } = pages;
   const { CREATE, VIEW, EDIT, DELETE } = types;
   const navMenu = [
     {
@@ -108,9 +116,13 @@ export const AppContextProvider = ({ children }) => {
       subMenu: [
         {
           text: 'Create',
+          pageValue: DELIVERY_CHALLAN,
+          type: CREATE,
         },
         {
           text: 'View',
+          pageValue: DELIVERY_CHALLAN,
+          type: VIEW,
         },
         {
           text: 'Modify',
@@ -127,8 +139,8 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(PO_MASTER);
-  const [type, setType] = useState(CREATE);
+  const [page, setPage] = useState(DELIVERY_CHALLAN);
+  const [type, setType] = useState(VIEW);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

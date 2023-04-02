@@ -7,6 +7,7 @@ import AppContext from './store/appContext';
 import Layout from './components/layout/Layout/Layout';
 import Import from './pages/import/Import';
 import PoMaster from './pages/poMaster/PoMaster';
+import DeliveryChallan from './pages/deliveryChallan/DeliveryChallan';
 import TestPage from './pages/testPage/TestPage';
 
 function App() {
@@ -23,7 +24,16 @@ function App() {
 }
 
 function getPageContent(page) {
-  const { HOME, ITEM_MASTER, CUSTOMER_MASTER, PO_MASTER, IMPORT } = pages;
+  const {
+    HOME,
+    ITEM_MASTER,
+    CUSTOMER_MASTER,
+    PO_MASTER,
+    DELIVERY_CHALLAN,
+    IMPORT,
+    TEST,
+  } = pages;
+  console.log(`Current page is ${page}`);
   switch (page) {
     case HOME:
       return HomePage;
@@ -33,9 +43,11 @@ function getPageContent(page) {
       return CustomerMaster;
     case PO_MASTER:
       return PoMaster;
+    case DELIVERY_CHALLAN:
+      return DeliveryChallan;
     case IMPORT:
       return Import;
-    case 'TEST_PAGE':
+    case TEST:
       return TestPage;
     default:
       return NotFoundPage;

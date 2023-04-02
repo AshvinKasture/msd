@@ -106,9 +106,8 @@ class WindowHandler {
     return this.showDialogBox({ message });
   }
 
-  showConfirmationBox({ title, message }) {
+  showConfirmationBox({ message }) {
     return this.showDialogBox({
-      title,
       message,
       type: 'question',
       buttons: ['OK', 'Cancel'],

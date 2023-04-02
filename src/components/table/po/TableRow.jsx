@@ -6,13 +6,14 @@ import { isPositiveInteger } from '../../../helpers/basicValidations';
 import DeleteIcon from '../../../assets/deleteIcon';
 
 function TableRow({
-  rowData: { index, drawingNo, description, quantity },
+  rowData: { index, drawingNo, description, quantity, quantityAllowed },
   disabled = false,
   lastActionHandler = null,
   setDrawingNo = null,
   setDescription = null,
   setQuantity = null,
   itemsTable = null,
+  showQuantityLimit = false,
   focusFirstElement = false,
   disableDelete = false,
   deleteRowHandler = null,
@@ -41,6 +42,8 @@ function TableRow({
     setFocusedElement('drawingNo');
   }, [focusFirstElement]);
 
+  // console.log(showQuantityLimit)
+
   return (
     <div className='table-row'>
       <div className='table-cell py-2 border border-black text-center'>
@@ -58,6 +61,7 @@ function TableRow({
           extendBlurHandler={
             setDrawingNo &&
             ((e, value) => {
+              console.log('blur');
               setDrawingNo(index, value);
             })
           }
@@ -90,7 +94,7 @@ function TableRow({
       </div>
       <div className='table-cell p-2 border border-black'>
         <TextInput
-          width='full'
+          width={showQuantityLimit ? '1/2' : 'full'}
           name='quantity'
           value={quantity}
           disabled={disabled}
@@ -98,12 +102,23 @@ function TableRow({
             setQuantity && ((e, value) => setQuantity(index, value))
           }
           acceptedInput={({ oldValue, newValue }) => {
-            return isPositiveInteger(newValue) ? newValue : oldValue;
+            if (showQuantityLimit) {
+              return isPositiveInteger(newValue) &&
+                +newValue <= +quantityAllowed &&
+                +newValue > 0
+                ? newValue
+                : oldValue;
+            } else {
+              return isPositiveInteger(newValue) ? newValue : oldValue;
+            }
           }}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
-          className='outline-0'
+          className='outline-0 text-right'
           ref={quantityRef.ref}
         />
+        {showQuantityLimit && (
+          <span className='ml-2 font-bold'>/ {quantityAllowed}</span>
+        )}
       </div>
       <div className='table-cell p-2 border border-black'>
         <div className='flex justify-center'>

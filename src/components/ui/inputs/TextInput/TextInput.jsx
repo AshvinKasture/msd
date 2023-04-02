@@ -126,6 +126,10 @@ const TextInput = forwardRef(
     useImperativeHandle(ref, () => {
       return { value: text, focus, reset, setValue };
     });
+    if (width === 'q') {
+      console.log('q');
+    }
+    // console.log(`w-${width}`);
     return (
       <input
         className={twMerge(

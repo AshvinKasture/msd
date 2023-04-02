@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const path = require('path');
-const XLSX = require('XLSX');
+const XLSX = require('xlsx');
 const Database = require('./database.cjs');
 const { pages, windowCodes, comCodes } = require('./codes.cjs');
 
@@ -30,15 +30,23 @@ class BusinessLayer {
       },
       {
         query:
+          'CREATE TABLE customer_master(customer_id INTEGER PRIMARY KEY AUTOINCREMENT, customer_name TEXT, customer_address TEXT, gst_no VARCHAR(30))',
+      },
+      {
+        query:
           'CREATE TABLE po_master(po_id INTEGER PRIMARY KEY AUTOINCREMENT, po_no VARCHAR(10), customer_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (customer_id) REFERENCES customer_master(customer_id))',
       },
       {
         query:
-          'CREATE TABLE po_items(po_id INTEGER, item_id INTEGER, quantity INTEGER, FOREIGN KEY (po_id) REFERENCES po_master(po_id), FOREIGN KEY (item_id) REFERENCES item_master(item_id))',
+          'CREATE TABLE po_items(entry_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, item_id INTEGER, quantity INTEGER, quantity_completed INTEGER DEFAULT 0, FOREIGN KEY (po_id) REFERENCES po_master(po_id), FOREIGN KEY (item_id) REFERENCES item_master(item_id))',
       },
       {
         query:
-          'CREATE TABLE customer_master(customer_id INTEGER PRIMARY KEY AUTOINCREMENT, customer_name TEXT, customer_address TEXT, gst_no VARCHAR(30))',
+          'CREATE TABLE delivery_challan(challan_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (po_id) REFERENCES po_master(po_id))',
+      },
+      {
+        query:
+          'CREATE TABLE delivery_items(challan_id INTEGER, entry_id INTEGER, quantity INTEGER,FOREIGN KEY (challan_id) REFERENCES delivery_challan(challan_id), FOREIGN KEY (entry_id) REFERENCES po_items(entry_id))',
       },
     ];
     for (let i = 0; i < queryList.length; i++) {
@@ -87,19 +95,6 @@ class BusinessLayer {
         case comCodes.IMPORT_ITEM_MASTER:
           await this.importItemMaster(data);
           break;
-        case comCodes.CREATE_PO:
-          await this.createPo(data);
-          break;
-        case comCodes.GET_ALL_PO:
-          return await this.getAllPo();
-        // case comCodes.GET_ITEMS_OF_PO:
-        //   return await this.getItemsOfPo(data);
-        case comCodes.GET_PO_DETAILS:
-          return await this.getPoDetails(data);
-        case comCodes.EDIT_PO:
-          return await this.editPo(data);
-        case comCodes.DELETE_PO:
-          return await this.deletePo(data);
         case comCodes.CREATE_CUSTOMER:
           return await this.createCustomer(data);
         case comCodes.GET_CUSTOMERS:
@@ -116,6 +111,21 @@ class BusinessLayer {
           return await this.deleteCustomer(data);
         case comCodes.IMPORT_CUSTOMER_MASTER:
           return await this.importCustomerMaster(data);
+        case comCodes.CREATE_PO:
+          await this.createPo(data);
+          break;
+        case comCodes.GET_ALL_PO:
+          return await this.getAllPo();
+        case comCodes.GET_PO_DETAILS:
+          return await this.getPoDetails(data);
+        case comCodes.EDIT_PO:
+          return await this.editPo(data);
+        case comCodes.DELETE_PO:
+          return await this.deletePo(data);
+        case comCodes.CREATE_DELIVERY_CHALLAN:
+          return await this.createDeliveryChallan(data);
+        case comCodes.GET_ALL_CHALLANS:
+          return await this.getAllChallans(data);
         default:
           console.error(`No COMS code found for ${code}`);
       }
@@ -220,6 +230,23 @@ class BusinessLayer {
         },
       });
       return result.length === 1;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getItemDetailsById(itemId) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT * FROM item_master WHERE item_id=$itemId',
+        params: {
+          $itemId: itemId,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Did not get correct no of item master');
+      }
+      return result[0];
     } catch (error) {
       console.error(error);
     }
@@ -446,6 +473,42 @@ class BusinessLayer {
     }
   }
 
+  async getPoEntryById(entryId) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT * FROM po_items WHERE entry_id=$entryId',
+        params: {
+          $entryId: entryId,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Incorrect no of items returned');
+      }
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getPoEntry(poId, itemId) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT entry_id FROM po_items WHERE po_id=$poId AND item_id=$itemId',
+        params: {
+          $poId: poId,
+          $itemId: itemId,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Correct values did not return');
+      }
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async editPo(poData) {
     try {
       const { poNumber, customerName, itemRows } = poData;
@@ -473,7 +536,6 @@ class BusinessLayer {
       });
       // console.log(await this.getPoDetails(poNumber));
       const { poId } = await this.getPoDetails(poNumber);
-      console.log(poId);
       await this.db.exec({
         query: 'DELETE FROM po_items WHERE po_id=$poId',
         params: {
@@ -528,6 +590,106 @@ class BusinessLayer {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async createDeliveryChallan(poData) {
+    try {
+      // console.log(poData);
+      const { poNumber, itemRows } = poData;
+      const poId = (await this.getPoFromPoNumber(poNumber)).po_id;
+      // console.log(poId);
+      await this.db.exec({
+        query: 'INSERT INTO delivery_challan(po_id) VALUES($poId)',
+        params: {
+          $poId: poId,
+        },
+      });
+      const result = await this.db.exec({
+        query: 'SELECT MAX(challan_id) AS challan_id FROM delivery_challan',
+      });
+      let challanId;
+      if (result.length === 1) {
+        challanId = result[0].challan_id;
+      } else {
+        throw Error('Incorrect no of rows returned');
+      }
+      for (let i = 0; i < itemRows.length; i++) {
+        const { drawingNo, quantity } = itemRows[i];
+        const { item_id: itemId } = await this.getItemDetails(drawingNo);
+        const { entry_id: entryId } = await this.getPoEntry(poId, itemId);
+        await this.db.exec({
+          query:
+            'INSERT INTO delivery_items(challan_id, entry_id, quantity) VALUES($challanId, $entryId, $quantity)',
+          params: {
+            $challanId: challanId,
+            $entryId: entryId,
+            $quantity: +quantity,
+          },
+        });
+        await this.db.exec({
+          query:
+            'UPDATE po_items SET quantity_completed = quantity_completed + $quantity WHERE entry_id=$entryId',
+          params: {
+            $entryId: entryId,
+            $quantity: +quantity,
+          },
+        });
+      }
+      const buttonClicked = this.windowHandeler.showConfirmationBox({
+        message: 'Delivery Challan created. Do you want to print it?',
+      });
+      console.log(buttonClicked);
+      if (buttonClicked === 0) {
+        return await this.printDeliveryChallan(challanId);
+      }
+    } catch (error) {
+      console.error(error);
+      this.windowHandeler.showErrorBox({
+        message: 'Error in creating delivery challan',
+      });
+    }
+  }
+
+  async getAllChallans(poNumber) {
+    try {
+      const { poId } = await this.getPoDetails(poNumber);
+      const poDetails = await this.getPoDetails(poNumber);
+      const result = await this.db.exec({
+        query: 'SELECT * FROM delivery_challan WHERE po_id=$poId',
+        params: {
+          $poId: poId,
+        },
+      });
+      for (let i = 0; i < result.length; i++) {
+        const challanItems = await this.db.exec({
+          query: 'SELECT * FROM delivery_items WHERE challan_id=$challanId',
+          params: {
+            $challanId: result[i].challan_id,
+          },
+        });
+        // console.log(challanItems);
+        for (let j = 0; j < challanItems.length; j++) {
+          const { item_id: itemId, quantity: totalQuantity } =
+            await this.getPoEntryById(challanItems[j].entry_id);
+          const itemDetails = await this.getItemDetailsById(itemId);
+          const challanItem = {
+            ...challanItems[j],
+            ...itemDetails,
+            totalQuantity,
+          };
+          challanItems[j] = challanItem;
+        }
+        result[i].items = challanItems;
+      }
+      poDetails.challans = result;
+      return poDetails;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async printDeliveryChallan(challanId) {
+    console.log(`Printing delivery clallan no ${challanId}`);
   }
 
   async createCustomer({ customerName, customerAddress, gstNo }) {

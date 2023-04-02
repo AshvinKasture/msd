@@ -11,8 +11,9 @@ const SelectInput = forwardRef(
       options = [],
       name = null,
       value = '',
-      strict = false,
-      dispatchNavigationShortcut,
+      extendChangeHandler = null,
+      disabled = false,
+      dispatchNavigationShortcut = null,
     },
     ref
   ) => {
@@ -22,6 +23,9 @@ const SelectInput = forwardRef(
 
     function changeHandler(e) {
       setText(e.target.value);
+      if (extendChangeHandler !== null) {
+        extendChangeHandler(e, e.target.value);
+      }
     }
 
     function focusHandler(e) {
@@ -66,12 +70,12 @@ const SelectInput = forwardRef(
         onKeyUp={keyUpHandler}
         ref={inputRef}
       >
-        <option value='' disabled={strict}>
+        <option value='' disabled={disabled}>
           -- Select --
         </option>
         {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+          <option key={option.value} value={option.value}>
+            {option.text}
           </option>
         ))}
       </select>

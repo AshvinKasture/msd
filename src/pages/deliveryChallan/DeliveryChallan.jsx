@@ -9,32 +9,82 @@ import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import FormField from '../../components/ui/inputs/FormField/FormField';
 import TextInput from '../../components/ui/inputs/TextInput/TextInput';
 import SuggestionInput from '../../components/ui/inputs/SuggestionInput/SuggestionInput';
+import SelectInput from '../../components/ui/inputs/SelectInput/SelectInput';
 import TableRow from '../../components/table/po/TableRow';
 import ActionButton from '../../components/ui/ActionButton';
 import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 import AppContext from '../../store/appContext';
 
-function PoMaster({ type }) {
+function DeliveryChallan({ type }) {
   const { changePage, setContentSpinner } = useContext(AppContext);
 
   const [customerList, setCustomerList] = useState([]);
-  const [itemsTable, setItemsTable] = useState({ rawItems: [] });
+  //   const [itemsTable, setItemsTable] = useState({
+  //     rawItems: [],
+  //     drawingNoMapping: {},
+  //     descriptionMapping: {},
+  //   });
   const [poList, setPoList] = useState([]);
+  const [poDetails, setPoDetails] = useState();
+  // const [challanDetails, setChallanDetails] = useState([]);
 
-  const [[poNumberRef, customerNameRef], dispatchNavigationShortcut, _] =
-    useNavigationShortcuts({
-      sequence: ['poNumber', 'customerName'],
-      defaultFocused: 'poNumber',
-      lastAction: () => {},
-    });
+  const [{ poNumber, customerName, itemsTable }, dispatchState] = useReducer(
+    (state, { type, payload }) => {
+      //   console.log(type, payload);
+      switch (type) {
+        case 'SET_PO_DETAILS':
+          const { poNumber, customerName, poItems: items } = payload;
+          //   console.log(poNumber, customerName, items);
+
+          const itemsTable = {
+            rawItems: items,
+            drawingNoMapping: {},
+            descriptionMapping: {},
+            quantityMapping: {},
+          };
+          for (let i = 0; i < items.length; i++) {
+            itemsTable.drawingNoMapping[items[i].drawing_no] =
+              items[i].description;
+            itemsTable.descriptionMapping[items[i].description] =
+              items[i].drawing_no;
+            itemsTable.quantityMapping[items[i].drawing_no] =
+              items[i].quantity - items[i].quantity_completed;
+          }
+          console.log({ poNumber, customerName, itemsTable });
+          return { poNumber, customerName, itemsTable };
+        default:
+          console.log('No case matched');
+          return { ...state };
+      }
+    },
+    {
+      poNumber: '',
+      customerName: '',
+      itemsTable: {
+        rawItems: [],
+        drawingNoMapping: {},
+        descriptionMapping: {},
+      },
+    }
+  );
+
+  const [
+    [poNumberRef, challanDateRef, customerNameRef],
+    dispatchNavigationShortcut,
+    _,
+  ] = useNavigationShortcuts({
+    sequence: ['poNumber', 'challanDate', 'customerName'],
+    defaultFocused: 'poNumber',
+    lastAction: () => {},
+  });
 
   useEffect(() => {
     resetPage();
     // initialElementFocus();
     switch (type) {
       case 'CREATE':
+        getPoList();
         getCustomerList();
-        getItems();
         break;
       case 'VIEW':
         getPoList();
@@ -58,7 +108,9 @@ function PoMaster({ type }) {
   }
 
   async function getItems() {
-    const items = await itemMasterModule.getItems();
+    // const items = await itemMasterModule.getItems();
+    console.log(poDetails);
+    const items = poDetails.poItems;
     const itemsTable = {
       rawItems: items,
       drawingNoMapping: {},
@@ -84,23 +136,26 @@ function PoMaster({ type }) {
   async function getPoDetails(poNumber) {
     const poDetails = await poMasterModule.getPoDetails(poNumber);
     customerNameRef.ref.current.setValue(poDetails.customerName);
-    const tableRows = [];
-    for (let i = 0; i < poDetails.poItems.length; i++) {
-      const {
-        drawing_no: drawingNo,
-        description,
-        quantity,
-      } = poDetails.poItems[i];
-      tableRows.push({ index: i, drawingNo, description, quantity });
-    }
-    dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
+    dispatchState({ type: 'SET_PO_DETAILS', payload: poDetails });
+  }
+
+  async function getChallanDetails(poNumber) {
+    const poDetails = await deliveryChallanModule.getAllChallans(poNumber);
+    console.log(poDetails);
+    setPoDetails(poDetails);
   }
 
   // const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
 
   const [tableState, dispatchTableState] = useReducer(
     (state, { type, payload }) => {
-      let index, drawingNo, description, newRowState, newRowData, quantity;
+      let index,
+        drawingNo,
+        description,
+        newRowState,
+        newRowData,
+        quantity,
+        quantityAllowed;
       // console.log({ type, payload });
       switch (type) {
         case 'ADD_ROW':
@@ -152,10 +207,12 @@ function PoMaster({ type }) {
           });
           newRowState = [...state.rows];
           description = itemsTable.drawingNoMapping[drawingNo] || null;
+          quantityAllowed = itemsTable.quantityMapping[drawingNo] || null;
           newRowData = {
             ...state.rows[index],
             drawingNo: description ? drawingNo : '',
             description: description ? description : '',
+            quantityAllowed: quantityAllowed ? quantityAllowed : '',
           };
           newRowState[index] = newRowData;
           return { ...state, rows: newRowState };
@@ -169,10 +226,12 @@ function PoMaster({ type }) {
           }
           newRowState = [...state.rows];
           drawingNo = itemsTable.descriptionMapping[description] || null;
+          quantityAllowed = itemsTable.quantityMapping[drawingNo] || null;
           newRowData = {
             ...state.rows[index],
             description: drawingNo ? description : '',
             drawingNo: drawingNo ? drawingNo : '',
+            quantityAllowed,
           };
           newRowState[index] = newRowData;
           return { ...state, rows: newRowState };
@@ -281,80 +340,6 @@ function PoMaster({ type }) {
       <Fragment>
         <div className='flex justify-center gap-10'>
           <FormField
-            component={TextInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              dispatchNavigationShortcut,
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={SuggestionInput}
-            label='Customer Name'
-            componentProperties={{
-              placeholder: 'Customer Name',
-              name: 'customerName',
-              suggestions: customerList,
-              strict: true,
-              dispatchNavigationShortcut,
-            }}
-            ref={customerNameRef.ref}
-          />
-        </div>
-        <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
-          <div className='table-header-group text-center font-bold text-lg'>
-            <div className='table-row'>
-              <div className='table-cell py-2 border border-black w-1/12'>
-                Sr. No.
-              </div>
-              <div className='table-cell py-2 border border-black w-3/12'>
-                Drawing No
-              </div>
-              <div className='table-cell py-2 border border-black w-5/12'>
-                Description
-              </div>
-              <div className='table-cell py-2 border border-black w-2/12'>
-                Quantity
-              </div>
-              <div className='table-cell py-2 border border-black w-1/12'></div>
-            </div>
-          </div>
-          <div className='table-row-group'>
-            {tableState.rows.map((tableRow) => {
-              return (
-                <TableRow
-                  key={tableRow.index}
-                  rowData={tableRow}
-                  lastActionHandler={lastActionHandler}
-                  setDrawingNo={setDrawingNo}
-                  setDescription={setDescription}
-                  setQuantity={setQuantity}
-                  itemsTable={itemsTable}
-                  disableDelete={tableState.lastRowIndex === 0}
-                  deleteRowHandler={deleteRow}
-                  focusFirstElement={tableRow.index === tableState.focusedIndex}
-                />
-              );
-            })}
-          </div>
-        </div>
-        <ActionButton
-          className='block bg-white text-black border hover:bg-black hover:text-white border-black mt-5'
-          onClick={addRow}
-        >
-          Add Row
-        </ActionButton>
-        <ActionButton className='block mx-auto my-10' onClick={createPo}>
-          Save
-        </ActionButton>
-      </Fragment>
-    ),
-    VIEW: (
-      <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
             component={SuggestionInput}
             label='PO Number'
             componentProperties={{
@@ -382,6 +367,116 @@ function PoMaster({ type }) {
             componentProperties={{
               name: 'customerName',
               value: '',
+              disabled: true,
+            }}
+            ref={customerNameRef.ref}
+          />
+        </div>
+        <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
+          <div className='table-header-group text-center font-bold text-lg'>
+            <div className='table-row'>
+              <div className='table-cell py-2 border border-black w-1/12'>
+                Sr. No.
+              </div>
+              <div className='table-cell py-2 border border-black w-2/12'>
+                Drawing No
+              </div>
+              <div className='table-cell py-2 border border-black w-5/12'>
+                Description
+              </div>
+              <div className='table-cell py-2 border border-black w-3/12'>
+                Quantity
+              </div>
+              <div className='table-cell py-2 border border-black w-1/12'></div>
+            </div>
+          </div>
+          <div className='table-row-group'>
+            {tableState.rows.map((tableRow) => {
+              return (
+                <TableRow
+                  key={tableRow.index}
+                  rowData={tableRow}
+                  lastActionHandler={lastActionHandler}
+                  setDrawingNo={setDrawingNo}
+                  setDescription={setDescription}
+                  setQuantity={setQuantity}
+                  itemsTable={itemsTable}
+                  showQuantityLimit={true}
+                  disableDelete={tableState.lastRowIndex === 0}
+                  deleteRowHandler={deleteRow}
+                  focusFirstElement={tableRow.index === tableState.focusedIndex}
+                />
+              );
+            })}
+          </div>
+        </div>
+        <ActionButton
+          className='block bg-white text-black border hover:bg-black hover:text-white border-black mt-5'
+          onClick={addRow}
+        >
+          Add Row
+        </ActionButton>
+        <ActionButton
+          className='block mx-auto my-10'
+          onClick={createDeliveryChallan}
+        >
+          Save
+        </ActionButton>
+      </Fragment>
+    ),
+    VIEW: (
+      <Fragment>
+        <div className='flex justify-center gap-10'>
+          <FormField
+            component={SuggestionInput}
+            label='PO Number'
+            componentProperties={{
+              placeholder: 'PO Number',
+              name: 'poNumber',
+              suggestions: poList,
+              strict: true,
+              extendChangeHandler: () => {
+                setTimeout(() => {
+                  const { value, isValid } = poNumberRef.ref.current;
+                  if (isValid) {
+                    // getPoDetails(value);
+                    getChallanDetails(value);
+                  }
+                }, 100);
+              },
+              extendFillHandler: (value) => {
+                // getPoDetails(value);
+                getChallanDetails(value);
+              },
+            }}
+            ref={poNumberRef.ref}
+          />
+          <FormField
+            component={SelectInput}
+            label='Challan date'
+            componentProperties={{
+              placeholder: 'Challan Date',
+              name: 'challanDate',
+              options: poDetails
+                ? poDetails.challans.map((challanItem) => {
+                    return {
+                      text: challanItem.created_at,
+                      value: challanItem.challan_id,
+                    };
+                  })
+                : [],
+              extendChangeHandler: (e, value) => {
+                console.log(value);
+              },
+            }}
+            ref={challanDateRef.ref}
+          />
+          <FormField
+            component={TextInput}
+            label='Customer Name'
+            componentProperties={{
+              name: 'customerName',
+              value: poDetails ? poDetails.customerName : '',
               disabled: true,
             }}
             ref={customerNameRef.ref}
@@ -611,10 +706,9 @@ function PoMaster({ type }) {
     );
   }
 
-  async function createPo() {
+  async function createDeliveryChallan() {
     setContentSpinner(true);
     const poNumber = poNumberRef.ref.current.value;
-    const customerName = customerNameRef.ref.current.value;
     const validRows = [];
     for (let i = 0; i < tableState.rows.length; i++) {
       const row = tableState.rows[i];
@@ -625,7 +719,7 @@ function PoMaster({ type }) {
     // console.log({ poNumber, customerName, validRows });
     if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
       const poData = { poNumber, customerName, itemRows: validRows };
-      await poMasterModule.createPo(poData);
+      await deliveryChallanModule.createDeliveryChallan(poData);
       resetPage();
     }
     setContentSpinner(false);
@@ -662,10 +756,10 @@ function PoMaster({ type }) {
 
   return (
     <Fragment>
-      <TitleBar>PO Master</TitleBar>
+      <TitleBar>Delivery Challan</TitleBar>
       <div className='w-3/4 mx-auto mt-24'>{modeContent[type]}</div>
     </Fragment>
   );
 }
 
-export default PoMaster;
+export default DeliveryChallan;
