@@ -51,7 +51,7 @@ function TableRow({
       </div>
       <div className='table-cell p-2 border border-black'>
         <SuggestionInput
-          width='full'
+          width='w-full'
           name='drawingNo'
           value={drawingNo}
           disabled={disabled}
@@ -72,7 +72,7 @@ function TableRow({
       </div>
       <div className='table-cell p-2 border border-black'>
         <SuggestionInput
-          width='full'
+          width='w-full'
           name='description'
           value={description}
           disabled={disabled}
@@ -94,7 +94,7 @@ function TableRow({
       </div>
       <div className='table-cell p-2 border border-black'>
         <TextInput
-          width={showQuantityLimit ? '1/2' : 'full'}
+          width={showQuantityLimit ? 'w-1/2' : 'w-full'}
           name='quantity'
           value={quantity}
           disabled={disabled}

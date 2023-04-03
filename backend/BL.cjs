@@ -126,6 +126,8 @@ class BusinessLayer {
           return await this.createDeliveryChallan(data);
         case comCodes.GET_ALL_CHALLANS:
           return await this.getAllChallans(data);
+        case comCodes.PRINT_CHALLAN:
+          return await this.printDeliveryChallan(data);
         default:
           console.error(`No COMS code found for ${code}`);
       }

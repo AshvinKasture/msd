@@ -19,14 +19,9 @@ function DeliveryChallan({ type }) {
   const { changePage, setContentSpinner } = useContext(AppContext);
 
   const [customerList, setCustomerList] = useState([]);
-  //   const [itemsTable, setItemsTable] = useState({
-  //     rawItems: [],
-  //     drawingNoMapping: {},
-  //     descriptionMapping: {},
-  //   });
   const [poList, setPoList] = useState([]);
   const [poDetails, setPoDetails] = useState();
-  // const [challanDetails, setChallanDetails] = useState([]);
+  const [challanId, setChallanId] = useState(null);
 
   const [{ poNumber, customerName, itemsTable }, dispatchState] = useReducer(
     (state, { type, payload }) => {
@@ -143,6 +138,20 @@ function DeliveryChallan({ type }) {
     const poDetails = await deliveryChallanModule.getAllChallans(poNumber);
     console.log(poDetails);
     setPoDetails(poDetails);
+  }
+
+  function fillChallanItems(challanId) {
+    setChallanId(challanId);
+    const challanItems = poDetails.challans.filter(
+      (challan) => challan.challan_id == challanId
+    )[0].items;
+
+    const tableRows = [];
+    for (let i = 0; i < challanItems.length; i++) {
+      const { drawing_no: drawingNo, description, quantity } = challanItems[i];
+      tableRows.push({ index: i, drawingNo, description, quantity });
+    }
+    dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
   }
 
   // const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
@@ -466,7 +475,7 @@ function DeliveryChallan({ type }) {
                   })
                 : [],
               extendChangeHandler: (e, value) => {
-                console.log(value);
+                fillChallanItems(value);
               },
             }}
             ref={challanDateRef.ref}
@@ -513,15 +522,23 @@ function DeliveryChallan({ type }) {
             })}
           </div>
         </div>
-
-        <ActionButton
-          className='block mx-auto my-10'
-          onClick={(e) => {
-            changePage(pages.HOME);
-          }}
-        >
-          Back
-        </ActionButton>
+        <div className='flex justify-center gap-x-10 my-24'>
+          <ActionButton
+            onClick={(e) => {
+              changePage(pages.HOME);
+            }}
+          >
+            Back
+          </ActionButton>
+          <ActionButton
+            className='bg-green-500'
+            onClick={(e) => {
+              deliveryChallanModule.printChallan(challanId);
+            }}
+          >
+            Print
+          </ActionButton>
+        </div>
       </Fragment>
     ),
     EDIT: (

@@ -13,7 +13,7 @@ const TextInput = forwardRef(
       placeholder = '',
       name = null,
       value = '',
-      width = 52,
+      width = 'w-52',
       disabled = false,
       acceptedInput = ({ newValue: value }) => value,
       extendChangeHandler = null,
@@ -133,7 +133,7 @@ const TextInput = forwardRef(
     return (
       <input
         className={twMerge(
-          `w-${width} outline outline-1 outline-black focus:outline-2 px-2 py-1 ${
+          `${width} outline outline-1 outline-black focus:outline-2 px-2 py-1 ${
             disabled && 'bg-gray-300 cursor-not-allowed'
           } ${classes}`
         )}
