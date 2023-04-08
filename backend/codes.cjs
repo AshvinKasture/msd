@@ -5,6 +5,7 @@ const pages = {
   PO_MASTER: 'PO_MASTER',
   DELIVERY_CHALLAN: 'DELIVERY_CHALLAN',
   IMPORT: 'IMPORT',
+  PRINT: 'PRINT',
   TEST: 'TEST',
 };
 

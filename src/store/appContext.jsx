@@ -139,8 +139,8 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(DELIVERY_CHALLAN);
-  const [type, setType] = useState(VIEW);
+  const [page, setPage] = useState('PRINT');
+  const [type, setType] = useState();
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 

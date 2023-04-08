@@ -128,6 +128,8 @@ class BusinessLayer {
           return await this.getAllChallans(data);
         case comCodes.PRINT_CHALLAN:
           return await this.printDeliveryChallan(data);
+        case 'PRINT_PAGE':
+          return await this.printPage();
         default:
           console.error(`No COMS code found for ${code}`);
       }
@@ -692,6 +694,7 @@ class BusinessLayer {
 
   async printDeliveryChallan(challanId) {
     console.log(`Printing delivery clallan no ${challanId}`);
+    this.windowHandeler.changePage(pages.PRINT);
   }
 
   async createCustomer({ customerName, customerAddress, gstNo }) {
@@ -898,6 +901,10 @@ class BusinessLayer {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async printPage() {
+    this.windowHandeler.printPage();
   }
 }
 

@@ -1,6 +1,8 @@
 const { BrowserWindow, Menu, screen, dialog, app } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
+const fs = require('fs');
+const os = require('os');
 
 class WindowHandler {
   static mainWindow;
@@ -128,6 +130,22 @@ class WindowHandler {
       buttonLabel,
     });
     return filePath || [];
+  }
+
+  async printPage() {
+    console.log('printing');
+    const data = await this.window.webContents.printToPDF({
+      // printBackground: true,
+      pageSize: 'A4',
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+      },
+    });
+    const pdfPath = path.join(os.homedir(), 'Desktop', 'temp.pdf');
+    fs.writeFile(pdfPath, data, (error) => console.error(error));
   }
 }
 

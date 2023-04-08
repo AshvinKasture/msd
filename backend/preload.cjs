@@ -183,3 +183,11 @@ contextBridge.exposeInMainWorld('fileModule', {
     });
   },
 });
+
+contextBridge.exposeInMainWorld('printModule', {
+  printPage: async () => {
+    return await ipcRenderer.invoke('COMS', {
+      code: 'PRINT_PAGE',
+    });
+  },
+});

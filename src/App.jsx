@@ -8,6 +8,7 @@ import Layout from './components/layout/Layout/Layout';
 import Import from './pages/import/Import';
 import PoMaster from './pages/poMaster/PoMaster';
 import DeliveryChallan from './pages/deliveryChallan/DeliveryChallan';
+import Print from './pages/print/Print';
 import TestPage from './pages/testPage/TestPage';
 
 function App() {
@@ -15,8 +16,9 @@ function App() {
   const { type } = useContext(AppContext);
 
   const PageContent = getPageContent(page);
-
-  return (
+  return page === 'PRINT' ? (
+    <Print />
+  ) : (
     <Layout>
       <PageContent type={type} />
     </Layout>
@@ -31,6 +33,7 @@ function getPageContent(page) {
     PO_MASTER,
     DELIVERY_CHALLAN,
     IMPORT,
+    PRINT,
     TEST,
   } = pages;
   console.log(`Current page is ${page}`);
@@ -47,6 +50,8 @@ function getPageContent(page) {
       return DeliveryChallan;
     case IMPORT:
       return Import;
+    case PRINT:
+      return Print;
     case TEST:
       return TestPage;
     default:
