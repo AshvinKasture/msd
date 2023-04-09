@@ -190,4 +190,10 @@ contextBridge.exposeInMainWorld('printModule', {
       code: 'PRINT_PAGE',
     });
   },
+  changeZoom: async (zoomValue) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: 'CHANGE_ZOOM',
+      data: zoomValue,
+    });
+  },
 });

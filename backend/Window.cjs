@@ -147,6 +147,10 @@ class WindowHandler {
     const pdfPath = path.join(os.homedir(), 'Desktop', 'temp.pdf');
     fs.writeFile(pdfPath, data, (error) => console.error(error));
   }
+
+  changeZoom(value) {
+    console.log(this.window.setZoomLevel);
+  }
 }
 
 module.exports = WindowHandler;

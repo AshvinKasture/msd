@@ -1,4 +1,4 @@
-const { ipcMain } = require('electron');
+const { ipcMain, webFrame } = require('electron');
 const path = require('path');
 const XLSX = require('xlsx');
 const Database = require('./database.cjs');
@@ -130,6 +130,8 @@ class BusinessLayer {
           return await this.printDeliveryChallan(data);
         case 'PRINT_PAGE':
           return await this.printPage();
+        case 'CHANGE_ZOOM':
+          return await this.changeZoom(data);
         default:
           console.error(`No COMS code found for ${code}`);
       }
@@ -905,6 +907,12 @@ class BusinessLayer {
 
   async printPage() {
     this.windowHandeler.printPage();
+  }
+
+  async changeZoom(zoomValue) {
+    // this.windowHandeler.changeZoom(zoomValue);
+    // webFrame.setZoomFactor(zoomValue);
+    console.log(webFrame);
   }
 }
 
