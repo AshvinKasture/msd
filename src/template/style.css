@@ -1,0 +1,196 @@
+body {
+  width: 210mm;
+  height: 297mm;
+  border: 0.5mm solid black;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  width: fit-content;
+  margin: auto;
+  margin-top: 5mm;
+  column-gap: 5mm;
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.company-name {
+  font-size: 8mm;
+  font-weight: bolder;
+}
+
+.gst {
+  font-weight: bold;
+}
+
+.delivery-challan-title {
+  margin: auto;
+  margin-top: 5mm;
+  padding: 1.5mm 4mm;
+  /* background-color: black; */
+  /* color: white; */
+  border: 1mm solid black;
+  border-radius: 3mm;
+  width: fit-content;
+}
+
+.body {
+  /* background-color: red; */
+  /* height: 90%; */
+  margin-top: 5mm;
+  padding-left: 10mm;
+  padding-right: 10mm;
+}
+
+.container {
+  /* background-color: green; */
+  /* height: 100%; */
+}
+
+.challan-info {
+  display: flex;
+  /* border: 0.5mm solid black; */
+  /* border-radius: 2mm; */
+  /* background-color: green; */
+  /* padding: 3mm; */
+}
+
+.challan-info > div {
+  flex: 1;
+  border: 0.5mm solid black;
+  padding: 2mm;
+}
+
+.customer-info {
+  /* background-color: red; */
+  /* border-right-width: 0.25mm; */
+  border-right-width: 0 !important;
+  border-top-left-radius: 3mm;
+  display: flex;
+  flex-direction: column;
+  row-gap: 1mm;
+  /* background-color: red; */
+}
+
+.customer-info > div {
+  /* background-color: yellow; */
+}
+
+.po-info {
+  /* background-color: yellow; */
+  /* border-left-width: 0 !important; */
+  border-top-right-radius: 3mm;
+}
+
+.po-info-row {
+  display: flex;
+  justify-content: space-between;
+  /* background-color: blue; */
+  margin-bottom: 1mm;
+  column-gap: 5mm;
+}
+
+.po-info-row > div {
+  /* background-color: yellow; */
+  flex: 1;
+  display: flex;
+  /* justify-content: space-between; */
+}
+
+.po-info-label {
+  margin-right: 3mm;
+  /* background-color: red; */
+  /* flex: 2; */
+  /* width: 22mm; */
+}
+
+.po-info-label.left-label {
+  /* flex: 1; */
+  width: 22mm;
+}
+
+.po-info-label.right-label {
+  /* flex: 1; */
+  width: 12mm;
+}
+
+.po-info-value {
+  /* background-color: green; */
+  /* flex: 1; */
+}
+
+table,
+tr,
+td,
+th {
+  border: 0.5mm solid black;
+  border-collapse: collapse;
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  padding: 1mm;
+}
+
+.sr-no-header {
+  /* width: 10mm; */
+  width: 7%;
+}
+
+.description-header {
+  /* width: 82.9mm; */
+  width: 43%;
+}
+
+.second-header {
+  /* width: 17.5mm; */
+  flex: 1;
+  width: 12.5%;
+}
+
+tr > td {
+  padding: 1mm;
+}
+
+.sr-no,
+.item-no,
+.quantity,
+.value,
+.remark {
+  text-align: center;
+}
+
+.description {
+  padding-left: 2mm;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  /* border: 1px solid black; */
+  width: 100%;
+  /* padding: 10mm; */
+  /* margin-left: auto; */
+  /* background-color: yellow; */
+}
+
+.space {
+  height: 20mm;
+  /* background-color: red; */
+}
+
+.labels {
+  /* background-color: green; */
+  padding: 5mm;
+  display: flex;
+  justify-content: space-between;
+  padding: 10mm;
+}
