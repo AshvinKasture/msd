@@ -12,6 +12,7 @@
     "dev": "concurrently -k \"npm run dev:react\" \"wait-on tcp:3000 && npm run dev:electron\""
   },
   "dependencies": {
+    "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sqlite3": "^5.1.4",

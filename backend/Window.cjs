@@ -87,6 +87,15 @@ class WindowHandler {
     this.window.webContents.send('PAGE', pageName);
   }
 
+  saveDialogBox({ title = this.appName, message, filters = [] }) {
+    const savePath = dialog.showSaveDialogSync(this.window, {
+      title,
+      message,
+      filters,
+    });
+    return savePath || null;
+  }
+
   showDialogBox({
     title = this.appName,
     message = 'This is a dialog box',
@@ -133,9 +142,7 @@ class WindowHandler {
   }
 
   async printPage() {
-    console.log('printing');
     const data = await this.window.webContents.printToPDF({
-      // printBackground: true,
       pageSize: 'A4',
       margins: {
         top: 0,

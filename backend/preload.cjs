@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const { windowCodes, comCodes, pages, types } = require('./codes.cjs');
+const moment = require('moment');
 
 contextBridge.exposeInMainWorld('pageModule', {
   tts: async () => {
@@ -176,6 +177,12 @@ contextBridge.exposeInMainWorld('deliveryChallanModule', {
   },
 });
 
+contextBridge.exposeInMainWorld('momentModule', {
+  formatDate: (date) => {
+    return moment(date).format('DD/MM/YYYY');
+  },
+});
+
 contextBridge.exposeInMainWorld('fileModule', {
   chooseExcelFile: async () => {
     return await ipcRenderer.invoke('COMS', {
@@ -185,6 +192,11 @@ contextBridge.exposeInMainWorld('fileModule', {
 });
 
 contextBridge.exposeInMainWorld('printModule', {
+  getPrintDetails: async () => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_PRINT_DETAILS,
+    });
+  },
   printPage: async () => {
     return await ipcRenderer.invoke('COMS', {
       code: 'PRINT_PAGE',

@@ -9,7 +9,7 @@
   </head>
   <body>
     <div class="header">
-      <img src="./logo.jpg" alt="logo" class="logo" />
+      <img src="../src/assets/logo.jpg" alt="logo" class="logo" />
       <div class="company-info">
         <div class="company-name">Avi Electric Motors</div>
         <div class="address">Plot No. A-72, MIDC, Ahmednagar - 414 111</div>
@@ -30,44 +30,42 @@
           <div class="customer-info">
             <div class="customer-name">
               <span>Customer Name :</span>
-              <span>Suraj Pressings</span>
+              <span id="customer-name">Suraj Pressings</span>
             </div>
             <div class="customer-address">
               <span>Customer Address :</span>
-              <span>G31, MIDC, Ahmednagar</span>
+              <span id="customer-address">G31, MIDC, Ahmednagar</span>
             </div>
             <div class="customer-gst-no">
               <span>GST No :</span>
-              <span>27AAECS8900N1ZW</span>
+              <span id="gst-no">27AAECS8900N1ZW</span>
             </div>
-            <!-- <span>M/S</span>
-            <span>AshTech</span> -->
           </div>
 
           <div class="po-info">
             <div class="po-info-row">
               <div>
                 <span class="po-info-label left-label">Challan No :</span>
-                <span class="po-info-value">5001</span>
+                <span class="po-info-value" id="challan-no">5001</span>
               </div>
               <div>
                 <span class="po-info-label right-label">Date :</span>
-                <span class="po-info-value">09/04/2023</span>
+                <span class="po-info-value" id="challan-date">09/04/2023</span>
               </div>
             </div>
             <div class="po-info-row">
               <div>
                 <span class="po-info-label left-label">P.O. No :</span>
-                <span class="po-info-value">2001</span>
+                <span class="po-info-value" id="po-no">2001</span>
               </div>
               <div>
                 <span class="po-info-label right-label">Date :</span>
-                <span class="po-info-value">05/04/2023</span>
+                <span class="po-info-value" id="po-date">05/04/2023</span>
               </div>
             </div>
             <div>
-              <span class="po-info-label">Vendor Code :</span>
-              <span class="po-info-value">5281629</span>
+              <span class="po-info-label">Customer Code :</span>
+              <span class="po-info-value" id="customer-code">5281629</span>
             </div>
           </div>
         </div>
@@ -82,8 +80,8 @@
               <th class="second-header remark-header">Remark</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
+          <tbody id="challan-table-body">
+            <!-- <tr>
               <td class="sr-no">1.</td>
               <td class="description">36 mm Din Rail</td>
               <td class="item-no">18A0001</td>
@@ -180,7 +178,7 @@
               <td class="quantity">110</td>
               <td class="value">26</td>
               <td class="remark">(1 bag)</td>
-            </tr>
+            </tr> -->
           </tbody>
         </table>
       </div>
@@ -192,5 +190,6 @@
         <span>For <b>Avi Electric Motors</b></span>
       </div>
     </div>
+    <script src="./script.js" defer></script>
   </body>
 </html>

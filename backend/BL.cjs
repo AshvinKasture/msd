@@ -1,8 +1,9 @@
-const { ipcMain, webFrame } = require('electron');
+const { ipcMain, webFrame, BrowserWindow } = require('electron');
 const path = require('path');
 const XLSX = require('xlsx');
 const Database = require('./database.cjs');
 const { pages, windowCodes, comCodes } = require('./codes.cjs');
+const fs = require('fs');
 
 class BusinessLayer {
   constructor(windowHandeler, userDataPath) {
@@ -18,6 +19,7 @@ class BusinessLayer {
       this.setupDatabase();
     }
     this.importingFile = null;
+    this.printableChallanData = null;
     this.blData = {};
     this.coms();
   }
@@ -128,6 +130,8 @@ class BusinessLayer {
           return await this.getAllChallans(data);
         case comCodes.PRINT_CHALLAN:
           return await this.printDeliveryChallan(data);
+        case comCodes.GET_PRINT_DETAILS:
+          return this.printableChallanData;
         case 'PRINT_PAGE':
           return await this.printPage();
         case 'CHANGE_ZOOM':
@@ -355,6 +359,212 @@ class BusinessLayer {
         });
       }
       // this.windowHandeler.openWindow(windowCodes.HOME);
+      this.windowHandeler.changePage(pages.HOME);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async createCustomer({ customerName, customerAddress, gstNo }) {
+    try {
+      if ((await this.getCustomerByName(customerName)) !== null) {
+        this.windowHandeler.showErrorBox({
+          message: `Customer ${customerName} already exists`,
+        });
+        return false;
+      }
+      const response = await this.db.exec({
+        query:
+          'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+        params: {
+          $customerName: customerName,
+          $customerAddress: customerAddress,
+          $gstNo: gstNo,
+        },
+      });
+      await this.windowHandeler.showInfoBox({ message: 'Customer created' });
+      return true;
+      // this.windowHandeler.openWindow(windowCodes.HOME);
+    } catch (error) {
+      console.error(error);
+      this.windowHandeler.showErrorBox({
+        message: 'Error in creating customer',
+      });
+    }
+  }
+
+  async getCustomers() {
+    try {
+      return await this.db.exec({
+        query: 'SELECT * FROM customer_master;',
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getCustomerById(customerId) {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT * FROM customer_master WHERE customer_id=$customerId',
+        params: {
+          $customerId: customerId,
+        },
+      });
+      if (result.length === 1) {
+        return result[0];
+      } else {
+        throw Error('Did not get a single customer in query');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getCustomerByName(customerName) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT * from customer_master WHERE customer_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      if (result.length === 1) {
+        return result[0];
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async checkIfCustomerExists(customerName) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT customer_name FROM customer_master WHERE customer_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      return result.length === 1;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getCustomerDetails(customerName) {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT * FROM customer_master where customer_name=$customerName',
+        params: {
+          $customerName: customerName,
+        },
+      });
+      if (result.length !== 1) {
+        throw Error('Did not get single customer');
+      }
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async editCustomer(customerData) {
+    try {
+      const { customerName, customerAddress, gstNo } = customerData;
+      if (await this.checkIfCustomerExists(customerName)) {
+        await this.db.exec({
+          query:
+            'UPDATE customer_master SET customer_address=$customerAddress, gst_no=$gstNo WHERE customer_name=$customerName',
+          params: {
+            $customerName: customerName,
+            $customerAddress: customerAddress,
+            $gstNo: gstNo,
+          },
+        });
+        await this.windowHandeler.showInfoBox({ message: 'Customer updated' });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async deleteCustomer(customerName) {
+    try {
+      if (await this.checkIfCustomerExists(customerName)) {
+        await this.db.exec({
+          query:
+            'DELETE FROM customer_master WHERE customer_name=$customerName',
+          params: {
+            $customerName: customerName,
+          },
+        });
+        await this.windowHandeler.showInfoBox({
+          message: `Customer ${customerName} deleted`,
+        });
+        return true;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async importCustomerMaster(options) {
+    try {
+      const { sheetName, start, end, cols } = options;
+      const customerNameCol = this.extractColFromExcel({
+        sheetName,
+        start,
+        end,
+        col: cols.customerName,
+      });
+      const customerAddressCol =
+        cols.customerAddress !== ''
+          ? this.extractColFromExcel({
+              sheetName,
+              start,
+              end,
+              col: cols.customerAddress,
+            })
+          : Array(customerNameCol.length).fill('');
+      const gstNoCol =
+        cols.gstNo !== ''
+          ? this.extractColFromExcel({ sheetName, start, end, col: cols.gstNo })
+          : Array(customerNameCol.length).fill('');
+      const alreadyExisting = [];
+      for (let i = 0; i < customerNameCol.length; i++) {
+        const customerName = customerNameCol[i];
+        const customerAddress = customerAddressCol[i];
+        const gstNo = gstNoCol[i];
+        const exists = await this.checkIfCustomerExists(customerName);
+        if (!exists) {
+          await this.db.exec({
+            query:
+              'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+            params: {
+              $customerName: customerName,
+              $customerAddress: customerAddress,
+              $gstNo: gstNo,
+            },
+          });
+        } else {
+          alreadyExisting.push(customerName);
+        }
+      }
+      if (alreadyExisting.length === 0) {
+        this.windowHandeler.showInfoBox({
+          message: 'Customer Master imported',
+        });
+      } else {
+        this.windowHandeler.showInfoBox({
+          message: `${alreadyExisting.length} skipped and imported others`,
+        });
+      }
       this.windowHandeler.changePage(pages.HOME);
     } catch (error) {
       console.error(error);
@@ -673,7 +883,6 @@ class BusinessLayer {
             $challanId: result[i].challan_id,
           },
         });
-        // console.log(challanItems);
         for (let j = 0; j < challanItems.length; j++) {
           const { item_id: itemId, quantity: totalQuantity } =
             await this.getPoEntryById(challanItems[j].entry_id);
@@ -694,215 +903,75 @@ class BusinessLayer {
     }
   }
 
-  async printDeliveryChallan(challanId) {
-    console.log(`Printing delivery clallan no ${challanId}`);
-    this.windowHandeler.changePage(pages.PRINT);
-  }
-
-  async createCustomer({ customerName, customerAddress, gstNo }) {
-    try {
-      if ((await this.getCustomerByName(customerName)) !== null) {
-        this.windowHandeler.showErrorBox({
-          message: `Customer ${customerName} already exists`,
-        });
-        return false;
-      }
-      const response = await this.db.exec({
-        query:
-          'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
-        params: {
-          $customerName: customerName,
-          $customerAddress: customerAddress,
-          $gstNo: gstNo,
-        },
-      });
-      await this.windowHandeler.showInfoBox({ message: 'Customer created' });
-      return true;
-      // this.windowHandeler.openWindow(windowCodes.HOME);
-    } catch (error) {
-      console.error(error);
-      this.windowHandeler.showErrorBox({
-        message: 'Error in creating customer',
-      });
-    }
-  }
-
-  async getCustomers() {
-    try {
-      return await this.db.exec({
-        query: 'SELECT * FROM customer_master;',
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async getCustomerById(customerId) {
-    try {
-      const result = await this.db.exec({
-        query: 'SELECT * FROM customer_master WHERE customer_id=$customerId',
-        params: {
-          $customerId: customerId,
-        },
-      });
-      if (result.length === 1) {
-        return result[0];
-      } else {
-        throw Error('Did not get a single customer in query');
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async getCustomerByName(customerName) {
+  async getChallanDetails(challanId) {
     try {
       const result = await this.db.exec({
         query:
-          'SELECT * from customer_master WHERE customer_name=$customerName',
+          'SELECT dc.challan_id AS challanNo, dc.created_at AS challanDate, pm.po_no AS poNo, pm.created_at AS poDate, cm.customer_name AS customerName, cm.customer_address AS customerAddress, cm.gst_no AS gstNo FROM delivery_challan dc, po_master pm, customer_master cm WHERE dc.challan_id=$challanId AND dc.po_id = pm.po_id AND pm.customer_id = cm.customer_id',
         params: {
-          $customerName: customerName,
+          $challanId: challanId,
         },
       });
-      if (result.length === 1) {
-        return result[0];
-      } else {
-        return null;
+      if (result.length !== 1) {
+        throw Error('Incorrect no of details recieved');
       }
+      const challanDetails = result[0];
+      challanDetails.challanItems = await this.db.exec({
+        query:
+          'SELECT di.quantity AS quantity, im.drawing_no AS drawingNo, im.description AS description FROM delivery_items di, po_items pi, item_master im WHERE di.challan_id=$challanId AND di.entry_id = pi.entry_id AND pi.item_id = im.item_id',
+        params: {
+          $challanId: challanId,
+        },
+      });
+      return challanDetails;
     } catch (error) {
       console.error(error);
       throw error;
     }
   }
 
-  async checkIfCustomerExists(customerName) {
-    try {
-      const result = await this.db.exec({
-        query:
-          'SELECT customer_name FROM customer_master WHERE customer_name=$customerName',
-        params: {
-          $customerName: customerName,
+  async printDeliveryChallan(challanId) {
+    const savePath = this.windowHandeler.saveDialogBox({
+      message: 'Save Delivery Challan',
+      filters: [
+        {
+          name: 'PDF Files',
+          extensions: ['pdf'],
         },
-      });
-      return result.length === 1;
-    } catch (error) {
-      console.error(error);
+      ],
+    });
+    if (!savePath) {
+      return;
     }
-  }
-
-  async getCustomerDetails(customerName) {
-    try {
-      const result = await this.db.exec({
-        query:
-          'SELECT * FROM customer_master where customer_name=$customerName',
-        params: {
-          $customerName: customerName,
-        },
-      });
-      if (result.length !== 1) {
-        throw Error('Did not get single customer');
-      }
-      return result[0];
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async editCustomer(customerData) {
-    try {
-      const { customerName, customerAddress, gstNo } = customerData;
-      if (await this.checkIfCustomerExists(customerName)) {
-        await this.db.exec({
-          query:
-            'UPDATE customer_master SET customer_address=$customerAddress, gst_no=$gstNo WHERE customer_name=$customerName',
-          params: {
-            $customerName: customerName,
-            $customerAddress: customerAddress,
-            $gstNo: gstNo,
+    this.printableChallanData = await this.getChallanDetails(challanId);
+    this.printableWindow = new BrowserWindow({
+      title: 'Print Window',
+      transparent: true,
+      show: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.cjs'),
+      },
+    });
+    this.printableWindow.maximize();
+    this.printableWindow.loadFile('template/index.html');
+    setTimeout(
+      async function () {
+        const data = await this.printableWindow.webContents.printToPDF({
+          pageSize: 'A4',
+          margins: {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
           },
         });
-        await this.windowHandeler.showInfoBox({ message: 'Customer updated' });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async deleteCustomer(customerName) {
-    try {
-      if (await this.checkIfCustomerExists(customerName)) {
-        await this.db.exec({
-          query:
-            'DELETE FROM customer_master WHERE customer_name=$customerName',
-          params: {
-            $customerName: customerName,
-          },
-        });
-        await this.windowHandeler.showInfoBox({
-          message: `Customer ${customerName} deleted`,
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async importCustomerMaster(options) {
-    try {
-      const { sheetName, start, end, cols } = options;
-      const customerNameCol = this.extractColFromExcel({
-        sheetName,
-        start,
-        end,
-        col: cols.customerName,
-      });
-      const customerAddressCol =
-        cols.customerAddress !== ''
-          ? this.extractColFromExcel({
-              sheetName,
-              start,
-              end,
-              col: cols.customerAddress,
-            })
-          : Array(customerNameCol.length).fill('');
-      const gstNoCol =
-        cols.gstNo !== ''
-          ? this.extractColFromExcel({ sheetName, start, end, col: cols.gstNo })
-          : Array(customerNameCol.length).fill('');
-      const alreadyExisting = [];
-      for (let i = 0; i < customerNameCol.length; i++) {
-        const customerName = customerNameCol[i];
-        const customerAddress = customerAddressCol[i];
-        const gstNo = gstNoCol[i];
-        const exists = await this.checkIfCustomerExists(customerName);
-        if (!exists) {
-          await this.db.exec({
-            query:
-              'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
-            params: {
-              $customerName: customerName,
-              $customerAddress: customerAddress,
-              $gstNo: gstNo,
-            },
-          });
-        } else {
-          alreadyExisting.push(customerName);
-        }
-      }
-      if (alreadyExisting.length === 0) {
-        this.windowHandeler.showInfoBox({
-          message: 'Customer Master imported',
-        });
-      } else {
-        this.windowHandeler.showInfoBox({
-          message: `${alreadyExisting.length} skipped and imported others`,
-        });
-      }
-      this.windowHandeler.changePage(pages.HOME);
-    } catch (error) {
-      console.error(error);
-    }
+        // const pdfPath = path.join(os.homedir(), 'Desktop', 'temp.pdf');
+        fs.writeFile(savePath, data, (error) => console.error(error));
+      }.bind(this),
+      1000
+    );
   }
 
   async printPage() {

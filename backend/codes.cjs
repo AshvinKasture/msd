@@ -60,6 +60,7 @@ const comCodes = {
   CREATE_DELIVERY_CHALLAN: 'CREATE_DELIVERY_CHALLAN',
   GET_ALL_CHALLANS: 'GET_ALL_CHALLANS',
   PRINT_CHALLAN: 'PRINT_CHALLAN',
+  GET_PRINT_DETAILS: 'GET_PRINT_DETAILS',
 };
 
 module.exports = { windowCodes, pages, types, comCodes };
