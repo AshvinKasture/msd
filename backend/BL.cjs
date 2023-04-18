@@ -124,6 +124,8 @@ class BusinessLayer {
           return await this.editPo(data);
         case comCodes.DELETE_PO:
           return await this.deletePo(data);
+        case comCodes.GET_NEXT_CHALLAN_NO:
+          return await this.getNextChallanNo();
         case comCodes.CREATE_DELIVERY_CHALLAN:
           return await this.createDeliveryChallan(data);
         case comCodes.GET_ALL_CHALLANS:
@@ -805,6 +807,22 @@ class BusinessLayer {
       }
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  async getNextChallanNo() {
+    try {
+      const result = await this.db.exec({
+        query:
+          'SELECT MAX(challan_id) AS largestChallanNo FROM delivery_challan',
+      });
+      if (result.length !== 1) {
+        throw Error('Incorrect no of rows returned');
+      }
+      return result[0].largestChallanNo + 1;
+    } catch (error) {
+      console.error(error);
+      throw Error(error);
     }
   }
 

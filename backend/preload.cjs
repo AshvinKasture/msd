@@ -157,6 +157,11 @@ contextBridge.exposeInMainWorld('poMasterModule', {
 });
 
 contextBridge.exposeInMainWorld('deliveryChallanModule', {
+  getNextChallanNo: async () => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_NEXT_CHALLAN_NO,
+    });
+  },
   createDeliveryChallan: async (poData) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.CREATE_DELIVERY_CHALLAN,
