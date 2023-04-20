@@ -65,7 +65,7 @@ function DeliveryChallan({ type }) {
   );
 
   const [
-    [poNumberRef, challanDateRef, customerNameRef],
+    [poNumberRef, customerNameRef, challanDateRef],
     dispatchNavigationShortcut,
     _,
   ] = useNavigationShortcuts({
@@ -401,8 +401,9 @@ function DeliveryChallan({ type }) {
               label='Challan Date'
               componentProperties={{
                 name: 'challanDate',
-                // value: '18/04/2023',
+                value: new Date(),
               }}
+              ref={challanDateRef.ref}
             />
           </div>
         </div>
@@ -523,7 +524,7 @@ function DeliveryChallan({ type }) {
               label='Challan Date'
               componentProperties={{
                 name: 'challanDate',
-                // value: '18/04/2023',
+                value: '',
               }}
             />
           </div>
@@ -761,9 +762,9 @@ function DeliveryChallan({ type }) {
   }
 
   async function createDeliveryChallan() {
-    setContentSpinner(true);
+    // setContentSpinner(true);
     const poNumber = poNumberRef.ref.current.value;
-    // const challanDate = challanDateRef.ref.current.value;
+    const challanDate = challanDateRef.ref.current.value;
     const validRows = [];
     for (let i = 0; i < tableState.rows.length; i++) {
       const row = tableState.rows[i];
@@ -773,7 +774,12 @@ function DeliveryChallan({ type }) {
     }
     // console.log({ poNumber, customerName, validRows });
     if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
-      const poData = { poNumber, customerName, itemRows: validRows };
+      const poData = {
+        poNumber,
+        customerName,
+        challanDate,
+        itemRows: validRows,
+      };
       await deliveryChallanModule.createDeliveryChallan(poData);
       resetPage();
     }

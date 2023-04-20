@@ -60,6 +60,14 @@ function Import({ type }) {
       title: 'Customer Master',
       fields: [
         {
+          label: 'Customer Code',
+          name: 'customerCode',
+          type: 'text',
+          validationFunction: (value) => {
+            return true;
+          },
+        },
+        {
           label: 'Customer Name',
           name: 'customerName',
           type: 'text',
@@ -88,6 +96,7 @@ function Import({ type }) {
         const sheetName = sheetComponent.value;
         const startNo = startComponent.value;
         const endNo = endComponent.value;
+        const customerCodeCol = fieldComponents.customerCode.value;
         const customerNameCol = fieldComponents.customerName.value;
         const customerAddressCol = fieldComponents.customerAddress.value;
         const gstNoCol = fieldComponents.gstNo.value;
@@ -97,6 +106,7 @@ function Import({ type }) {
           start: startNo,
           end: endNo,
           cols: {
+            customerCode: customerCodeCol,
             customerName: customerNameCol,
             customerAddress: customerAddressCol,
             gstNo: gstNoCol,

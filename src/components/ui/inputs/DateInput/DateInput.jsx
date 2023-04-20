@@ -1,4 +1,9 @@
-import React, { useState, forwardRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import DatePicker from 'react-datepicker';
 import { twMerge } from 'tailwind-merge';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -23,8 +28,28 @@ const DateInput = forwardRef(
   ) => {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
+    useEffect(() => {
+      console.log(value, new Date().getSeconds());
+      setSelectedDate(value);
+    }, [value]);
+
+    function focus() {
+      console.log('Focus function yet tobe implemented for DateInput');
+    }
+
+    function reset() {
+      setSelectedDate(new Date());
+    }
+
+    function setValue(value) {
+      setSelectedDate(value);
+    }
+
+    useImperativeHandle(ref, () => {
+      return { value: selectedDate, focus, reset, setValue };
+    });
+
     return (
-      //   <div>
       <DatePicker
         className={twMerge(
           `${width} outline outline-1 outline-black focus:outline-2 px-2 py-1 ${
@@ -32,11 +57,11 @@ const DateInput = forwardRef(
           } ${classes}`
         )}
         wrapperClassName={`${width}`}
+        name={name}
         dateFormat='dd/MM/yyyy'
         selected={selectedDate}
         onChange={(date) => setSelectedDate(date)}
       />
-      //   </div>
     );
   }
 );

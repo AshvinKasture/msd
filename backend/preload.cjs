@@ -186,6 +186,9 @@ contextBridge.exposeInMainWorld('momentModule', {
   formatDate: (date) => {
     return moment(date).format('DD/MM/YYYY');
   },
+  formatDateForDatabase: (date) => {
+    return moment(date).format('YYYY-MM-DD');
+  },
 });
 
 contextBridge.exposeInMainWorld('fileModule', {

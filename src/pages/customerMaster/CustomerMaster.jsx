@@ -13,11 +13,11 @@ function CustomerMaster({ type }) {
   const [customerList, setCustomerList] = useState([]);
 
   const [
-    [customerNameRef, customerAddressRef, gstNoRef],
+    [customerCodeRef, customerNameRef, customerAddressRef, gstNoRef],
     dispatchNavigationShortcut,
     _,
   ] = useNavigationShortcuts({
-    sequence: ['customerName', 'customerAddress', 'gstNo'],
+    sequence: ['customerCode', 'customerName', 'customerAddress', 'gstNo'],
     defaultFocused: 'customerName',
   });
 
@@ -36,6 +36,7 @@ function CustomerMaster({ type }) {
   async function submitForm(e) {
     setContentSpinner(true);
     const customerData = {
+      customerCode: customerCodeRef.ref.current.value,
       customerName: customerNameRef.ref.current.value,
       customerAddress: customerAddressRef.ref.current.value,
       gstNo: gstNoRef.ref.current.value,
@@ -48,14 +49,19 @@ function CustomerMaster({ type }) {
   }
 
   function resetPage() {
+    customerCodeRef.ref.current.reset();
     customerNameRef.ref.current.reset();
     customerAddressRef.ref.current.reset();
     gstNoRef.ref.current.reset();
   }
 
   async function getCustomerDetails(value) {
-    const { customer_address: customerAddress, gst_no: gstNo } =
-      await customerMasterModule.getCustomerDetails(value);
+    const {
+      customer_code: customerCode,
+      customer_address: customerAddress,
+      gst_no: gstNo,
+    } = await customerMasterModule.getCustomerDetails(value);
+    customerCodeRef.ref.current.setValue(customerCode);
     customerAddressRef.ref.current.setValue(customerAddress);
     gstNoRef.ref.current.setValue(gstNo);
   }
@@ -63,6 +69,7 @@ function CustomerMaster({ type }) {
   async function editCustomer(e) {
     setContentSpinner(true);
     const customerData = {
+      customerCode: customerCodeRef.ref.current.value,
       customerName: customerNameRef.ref.current.value,
       customerAddress: customerAddressRef.ref.current.value,
       gstNo: gstNoRef.ref.current.value,
@@ -89,6 +96,15 @@ function CustomerMaster({ type }) {
   const modeContent = {
     CREATE: (
       <Fragment>
+        <FormField
+          label='Customer Code'
+          component={TextInput}
+          componentProperties={{
+            name: 'customerCode',
+            dispatchNavigationShortcut,
+          }}
+          ref={customerCodeRef.ref}
+        />
         <FormField
           label='Customer Name'
           component={TextInput}
@@ -127,6 +143,14 @@ function CustomerMaster({ type }) {
     ),
     VIEW: (
       <Fragment>
+        <FormField
+          label='Customer Code'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={customerCodeRef.ref}
+        />
         <FormField
           label='Customer Name'
           component={SuggestionInput}
@@ -176,6 +200,15 @@ function CustomerMaster({ type }) {
     ),
     EDIT: (
       <Fragment>
+        <FormField
+          label='Customer Code'
+          component={TextInput}
+          componentProperties={{
+            name: 'customerCode',
+            dispatchNavigationShortcut,
+          }}
+          ref={customerCodeRef.ref}
+        />
         <FormField
           label='Customer Name'
           component={SuggestionInput}
@@ -236,6 +269,15 @@ function CustomerMaster({ type }) {
     ),
     DELETE: (
       <Fragment>
+        <FormField
+          label='Customer Code'
+          component={TextInput}
+          componentProperties={{
+            disabled: true,
+          }}
+          ref={customerCodeRef.ref}
+        />
+
         <FormField
           label='Customer Name'
           component={SuggestionInput}

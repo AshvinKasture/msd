@@ -9,6 +9,7 @@ import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import FormField from '../../components/ui/inputs/FormField/FormField';
 import TextInput from '../../components/ui/inputs/TextInput/TextInput';
 import SuggestionInput from '../../components/ui/inputs/SuggestionInput/SuggestionInput';
+import DateInput from '../../components/ui/inputs/DateInput/DateInput';
 import TableRow from '../../components/table/po/TableRow';
 import ActionButton from '../../components/ui/ActionButton';
 import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
@@ -21,12 +22,15 @@ function PoMaster({ type }) {
   const [itemsTable, setItemsTable] = useState({ rawItems: [] });
   const [poList, setPoList] = useState([]);
 
-  const [[poNumberRef, customerNameRef], dispatchNavigationShortcut, _] =
-    useNavigationShortcuts({
-      sequence: ['poNumber', 'customerName'],
-      defaultFocused: 'poNumber',
-      lastAction: () => {},
-    });
+  const [
+    [poNumberRef, customerNameRef, poDateRef],
+    dispatchNavigationShortcut,
+    _,
+  ] = useNavigationShortcuts({
+    sequence: ['poNumber', 'customerName', 'poDate'],
+    defaultFocused: 'poNumber',
+    lastAction: () => {},
+  });
 
   useEffect(() => {
     resetPage();
@@ -78,12 +82,14 @@ function PoMaster({ type }) {
   function resetPage() {
     poNumberRef.ref.current.reset();
     customerNameRef.ref.current.reset();
+    poDateRef.ref.current.setValue('');
     resetTable();
   }
 
   async function getPoDetails(poNumber) {
     const poDetails = await poMasterModule.getPoDetails(poNumber);
     customerNameRef.ref.current.setValue(poDetails.customerName);
+    poDateRef.ref.current.setValue(poDetails.poDate);
     const tableRows = [];
     for (let i = 0; i < poDetails.poItems.length; i++) {
       const {
@@ -279,29 +285,41 @@ function PoMaster({ type }) {
   const modeContent = {
     CREATE: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={TextInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              dispatchNavigationShortcut,
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={SuggestionInput}
-            label='Customer Name'
-            componentProperties={{
-              placeholder: 'Customer Name',
-              name: 'customerName',
-              suggestions: customerList,
-              strict: true,
-              dispatchNavigationShortcut,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={TextInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                dispatchNavigationShortcut,
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='Customer Name'
+              componentProperties={{
+                placeholder: 'Customer Name',
+                name: 'customerName',
+                suggestions: customerList,
+                strict: true,
+                dispatchNavigationShortcut,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='PO Date'
+              componentProperties={{
+                name: 'poDate',
+              }}
+              ref={poDateRef.ref}
+            />
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -353,39 +371,53 @@ function PoMaster({ type }) {
     ),
     VIEW: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={SuggestionInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              suggestions: poList,
-              strict: true,
-              extendChangeHandler: () => {
-                setTimeout(() => {
-                  const { value, isValid } = poNumberRef.ref.current;
-                  if (isValid) {
-                    getPoDetails(value);
-                  }
-                }, 100);
-              },
-              extendFillHandler: (value) => {
-                getPoDetails(value);
-              },
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={TextInput}
-            label='Customer Name'
-            componentProperties={{
-              name: 'customerName',
-              value: '',
-              disabled: true,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={TextInput}
+              label='Customer Name'
+              componentProperties={{
+                name: 'customerName',
+                value: '',
+                disabled: true,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='PO Date'
+              componentProperties={{
+                name: 'poDate',
+                value: '',
+                disabled: true,
+              }}
+              ref={poDateRef.ref}
+            />
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -431,41 +463,55 @@ function PoMaster({ type }) {
     ),
     EDIT: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={SuggestionInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              suggestions: poList,
-              strict: true,
-              extendChangeHandler: () => {
-                setTimeout(() => {
-                  const { value, isValid } = poNumberRef.ref.current;
-                  if (isValid) {
-                    getPoDetails(value);
-                  }
-                }, 100);
-              },
-              extendFillHandler: (value) => {
-                getPoDetails(value);
-              },
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={SuggestionInput}
-            label='Customer Name'
-            componentProperties={{
-              placeholder: 'Customer Name',
-              name: 'customerName',
-              suggestions: customerList,
-              strict: true,
-              dispatchNavigationShortcut,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='Customer Name'
+              componentProperties={{
+                placeholder: 'Customer Name',
+                name: 'customerName',
+                suggestions: customerList,
+                strict: true,
+                dispatchNavigationShortcut,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='PO Date'
+              componentProperties={{
+                placeholder: 'PO Date',
+                name: 'poDate',
+                value: '',
+              }}
+              ref={poDateRef.ref}
+            />
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -527,39 +573,53 @@ function PoMaster({ type }) {
     ),
     DELETE: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={SuggestionInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              suggestions: poList,
-              strict: true,
-              extendChangeHandler: () => {
-                setTimeout(() => {
-                  const { value, isValid } = poNumberRef.ref.current;
-                  if (isValid) {
-                    getPoDetails(value);
-                  }
-                }, 100);
-              },
-              extendFillHandler: (value) => {
-                getPoDetails(value);
-              },
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={TextInput}
-            label='Customer Name'
-            componentProperties={{
-              name: 'customerName',
-              value: '',
-              disabled: true,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={TextInput}
+              label='Customer Name'
+              componentProperties={{
+                name: 'customerName',
+                value: '',
+                disabled: true,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='PO Date'
+              componentProperties={{
+                name: 'poDate',
+                value: '',
+                disabled: true,
+              }}
+              ref={poDateRef.ref}
+            />
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -615,6 +675,7 @@ function PoMaster({ type }) {
     setContentSpinner(true);
     const poNumber = poNumberRef.ref.current.value;
     const customerName = customerNameRef.ref.current.value;
+    const poDate = poDateRef.ref.current.value;
     const validRows = [];
     for (let i = 0; i < tableState.rows.length; i++) {
       const row = tableState.rows[i];
@@ -624,7 +685,7 @@ function PoMaster({ type }) {
     }
     // console.log({ poNumber, customerName, validRows });
     if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
-      const poData = { poNumber, customerName, itemRows: validRows };
+      const poData = { poNumber, customerName, poDate, itemRows: validRows };
       await poMasterModule.createPo(poData);
       resetPage();
     }
@@ -635,6 +696,7 @@ function PoMaster({ type }) {
     setContentSpinner(true);
     const poNumber = poNumberRef.ref.current.value;
     const customerName = customerNameRef.ref.current.value;
+    const poDate = poDateRef.ref.current.value;
     const validRows = [];
     for (let i = 0; i < tableState.rows.length; i++) {
       const row = tableState.rows[i];
@@ -643,7 +705,7 @@ function PoMaster({ type }) {
       }
     }
     if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
-      const poData = { poNumber, customerName, itemRows: validRows };
+      const poData = { poNumber, customerName, poDate, itemRows: validRows };
       await poMasterModule.editPo(poData);
       resetPage();
     }

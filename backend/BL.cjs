@@ -32,11 +32,11 @@ class BusinessLayer {
       },
       {
         query:
-          'CREATE TABLE customer_master(customer_id INTEGER PRIMARY KEY AUTOINCREMENT, customer_name TEXT, customer_address TEXT, gst_no VARCHAR(30))',
+          'CREATE TABLE customer_master(customer_id INTEGER PRIMARY KEY AUTOINCREMENT, customer_code VARCHAR(30), customer_name TEXT, customer_address TEXT, gst_no VARCHAR(30))',
       },
       {
         query:
-          'CREATE TABLE po_master(po_id INTEGER PRIMARY KEY AUTOINCREMENT, po_no VARCHAR(10), customer_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (customer_id) REFERENCES customer_master(customer_id))',
+          'CREATE TABLE po_master(po_id INTEGER PRIMARY KEY AUTOINCREMENT, po_no VARCHAR(10), customer_id INTEGER, po_date DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (customer_id) REFERENCES customer_master(customer_id))',
       },
       {
         query:
@@ -44,7 +44,7 @@ class BusinessLayer {
       },
       {
         query:
-          'CREATE TABLE delivery_challan(challan_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (po_id) REFERENCES po_master(po_id))',
+          'CREATE TABLE delivery_challan(challan_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, challan_date DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (po_id) REFERENCES po_master(po_id))',
       },
       {
         query:
@@ -367,7 +367,7 @@ class BusinessLayer {
     }
   }
 
-  async createCustomer({ customerName, customerAddress, gstNo }) {
+  async createCustomer({ customerCode, customerName, customerAddress, gstNo }) {
     try {
       if ((await this.getCustomerByName(customerName)) !== null) {
         this.windowHandeler.showErrorBox({
@@ -377,8 +377,9 @@ class BusinessLayer {
       }
       const response = await this.db.exec({
         query:
-          'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+          'INSERT INTO customer_master(customer_code, customer_name, customer_address, gst_no) VALUES($customerCode, $customerName, $customerAddress, $gstNo)',
         params: {
+          $customerCode: customerCode,
           $customerName: customerName,
           $customerAddress: customerAddress,
           $gstNo: gstNo,
@@ -478,12 +479,14 @@ class BusinessLayer {
 
   async editCustomer(customerData) {
     try {
-      const { customerName, customerAddress, gstNo } = customerData;
+      const { customerCode, customerName, customerAddress, gstNo } =
+        customerData;
       if (await this.checkIfCustomerExists(customerName)) {
         await this.db.exec({
           query:
-            'UPDATE customer_master SET customer_address=$customerAddress, gst_no=$gstNo WHERE customer_name=$customerName',
+            'UPDATE customer_master SET customer_code=$customerCode, customer_address=$customerAddress, gst_no=$gstNo WHERE customer_name=$customerName',
           params: {
+            $customerCode: customerCode,
             $customerName: customerName,
             $customerAddress: customerAddress,
             $gstNo: gstNo,
@@ -519,6 +522,15 @@ class BusinessLayer {
   async importCustomerMaster(options) {
     try {
       const { sheetName, start, end, cols } = options;
+      const customerCodeCol =
+        cols.customerCode !== ''
+          ? this.extractColFromExcel({
+              sheetName,
+              start,
+              end,
+              col: cols.customerCode,
+            })
+          : Array(customerNameCol.length).fill('');
       const customerNameCol = this.extractColFromExcel({
         sheetName,
         start,
@@ -540,6 +552,7 @@ class BusinessLayer {
           : Array(customerNameCol.length).fill('');
       const alreadyExisting = [];
       for (let i = 0; i < customerNameCol.length; i++) {
+        const customerCode = customerCodeCol[i];
         const customerName = customerNameCol[i];
         const customerAddress = customerAddressCol[i];
         const gstNo = gstNoCol[i];
@@ -547,8 +560,9 @@ class BusinessLayer {
         if (!exists) {
           await this.db.exec({
             query:
-              'INSERT INTO customer_master(customer_name, customer_address, gst_no) VALUES($customerName, $customerAddress, $gstNo)',
+              'INSERT INTO customer_master(customer_code, customer_name, customer_address, gst_no) VALUES($customerCode, $customerName, $customerAddress, $gstNo)',
             params: {
+              $customerCode: customerCode,
               $customerName: customerName,
               $customerAddress: customerAddress,
               $gstNo: gstNo,
@@ -573,7 +587,7 @@ class BusinessLayer {
     }
   }
 
-  async createPo({ poNumber, customerName, itemRows }) {
+  async createPo({ poNumber, customerName, poDate, itemRows }) {
     try {
       if (await this.checkIfPoExists(poNumber)) {
         await this.windowHandeler.showErrorBox({
@@ -587,10 +601,11 @@ class BusinessLayer {
       }
       await this.db.exec({
         query:
-          'INSERT INTO po_master(po_no, customer_id) VALUES($poNumber, $customerId)',
+          'INSERT INTO po_master(po_no, customer_id, po_date) VALUES($poNumber, $customerId, $poDate)',
         params: {
           $poNumber: poNumber,
           $customerId: customer.customer_id,
+          $poDate: poDate,
         },
       });
       const result = await this.db.exec({
@@ -673,10 +688,12 @@ class BusinessLayer {
         poId: null,
         poNumber,
         customerName: null,
+        poDate: null,
         poItems: null,
       };
       let result = await this.getPoFromPoNumber(poNumber);
       poDetails.poId = result.po_id;
+      poDetails.poDate = result.po_date;
       result = await this.getCustomerById(result.customer_id);
       poDetails.customerName = result.customer_name;
       result = await this.db.exec({
@@ -729,7 +746,7 @@ class BusinessLayer {
 
   async editPo(poData) {
     try {
-      const { poNumber, customerName, itemRows } = poData;
+      const { poNumber, customerName, poDate, itemRows } = poData;
       if (!(await this.checkIfPoExists(poNumber))) {
         await this.windowHandeler.showErrorBox({
           message: `PO ${poNumber} does not exist`,
@@ -746,9 +763,10 @@ class BusinessLayer {
         .customer_id;
       await this.db.exec({
         query:
-          'UPDATE po_master SET customer_id=$customerId WHERE po_no=$poNumber',
+          'UPDATE po_master SET customer_id=$customerId, po_date=$poDate WHERE po_no=$poNumber',
         params: {
           $customerId: customerId,
+          $poDate: poDate,
           $poNumber: poNumber,
         },
       });
@@ -829,13 +847,15 @@ class BusinessLayer {
   async createDeliveryChallan(poData) {
     try {
       // console.log(poData);
-      const { poNumber, itemRows } = poData;
+      const { poNumber, challanDate, itemRows } = poData;
       const poId = (await this.getPoFromPoNumber(poNumber)).po_id;
       // console.log(poId);
       await this.db.exec({
-        query: 'INSERT INTO delivery_challan(po_id) VALUES($poId)',
+        query:
+          'INSERT INTO delivery_challan(po_id, challan_date) VALUES($poId, $challanDate)',
         params: {
           $poId: poId,
+          $challanDate: challanDate,
         },
       });
       const result = await this.db.exec({
@@ -869,13 +889,13 @@ class BusinessLayer {
           },
         });
       }
-      const buttonClicked = this.windowHandeler.showConfirmationBox({
-        message: 'Delivery Challan created. Do you want to print it?',
-      });
-      console.log(buttonClicked);
-      if (buttonClicked === 0) {
-        return await this.printDeliveryChallan(challanId);
-      }
+      // const buttonClicked = this.windowHandeler.showConfirmationBox({
+      //   message: 'Delivery Challan created. Do you want to print it?',
+      // });
+      // console.log(buttonClicked);
+      // if (buttonClicked === 0) {
+      //   return await this.printDeliveryChallan(challanId);
+      // }
     } catch (error) {
       console.error(error);
       this.windowHandeler.showErrorBox({
