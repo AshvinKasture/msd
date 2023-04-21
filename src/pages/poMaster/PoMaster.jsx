@@ -316,6 +316,7 @@ function PoMaster({ type }) {
               label='PO Date'
               componentProperties={{
                 name: 'poDate',
+                value: new Date(),
               }}
               ref={poDateRef.ref}
             />

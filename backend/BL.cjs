@@ -128,6 +128,8 @@ class BusinessLayer {
           return await this.getNextChallanNo();
         case comCodes.CREATE_DELIVERY_CHALLAN:
           return await this.createDeliveryChallan(data);
+        case comCodes.GET_CHALLAN_LIST:
+          return await this.getChallanList();
         case comCodes.GET_ALL_CHALLANS:
           return await this.getAllChallans(data);
         case comCodes.PRINT_CHALLAN:
@@ -889,6 +891,9 @@ class BusinessLayer {
           },
         });
       }
+
+      // REDIRECT TO THE VIEW OF THE CREATED CHALLAN
+
       // const buttonClicked = this.windowHandeler.showConfirmationBox({
       //   message: 'Delivery Challan created. Do you want to print it?',
       // });
@@ -901,6 +906,18 @@ class BusinessLayer {
       this.windowHandeler.showErrorBox({
         message: 'Error in creating delivery challan',
       });
+    }
+  }
+
+  async getChallanList() {
+    try {
+      const result = await this.db.exec({
+        query: 'SELECT challan_id FROM delivery_challan',
+      });
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
   }
 

@@ -65,11 +65,11 @@ function DeliveryChallan({ type }) {
   );
 
   const [
-    [poNumberRef, customerNameRef, challanDateRef],
+    [challanNoRef, poNumberRef, customerNameRef, challanDateRef],
     dispatchNavigationShortcut,
     _,
   ] = useNavigationShortcuts({
-    sequence: ['poNumber', 'challanDate', 'customerName'],
+    sequence: ['challanNo', 'poNumber', 'customerName', 'challanDate'],
     defaultFocused: 'poNumber',
     lastAction: () => {},
   });
@@ -84,7 +84,8 @@ function DeliveryChallan({ type }) {
         getCustomerList();
         break;
       case 'VIEW':
-        getPoList();
+        // getPoList();
+        getChallanList();
         break;
       case 'EDIT':
         getPoList();
@@ -125,6 +126,12 @@ function DeliveryChallan({ type }) {
     }
     setItemsTable(itemsTable);
   }
+
+  async function getChallanList() {
+    const challanList = await deliveryChallanModule.getChallanList();
+    console.log(challanList);
+  }
+
   async function getPoList() {
     const poList = await poMasterModule.getPoList();
     setPoList(poList.map((poItem) => poItem.po_no));
@@ -361,6 +368,7 @@ function DeliveryChallan({ type }) {
               component={TextInput}
               label='Challan No'
               componentProperties={{ value: nextChallanNo, disabled: true }}
+              ref={challanNoRef.ref}
             />
             <FormField
               component={SuggestionInput}
@@ -465,10 +473,10 @@ function DeliveryChallan({ type }) {
           <div className='flex justify-center gap-10'>
             <FormField
               component={SuggestionInput}
-              label='PO Number'
+              label='Challan Number'
               componentProperties={{
-                placeholder: 'PO Number',
-                name: 'poNumber',
+                placeholder: 'Challan Number',
+                name: 'challanNo',
                 suggestions: poList,
                 strict: true,
                 extendChangeHandler: () => {
@@ -485,27 +493,16 @@ function DeliveryChallan({ type }) {
                   getChallanDetails(value);
                 },
               }}
-              ref={poNumberRef.ref}
+              ref={challanNoRef.ref}
             />
             <FormField
-              component={SelectInput}
-              label='Challan date'
+              component={TextInput}
+              label='Po Number'
               componentProperties={{
-                placeholder: 'Challan Date',
-                name: 'challanDate',
-                options: poDetails
-                  ? poDetails.challans.map((challanItem) => {
-                      return {
-                        text: challanItem.created_at,
-                        value: challanItem.challan_id,
-                      };
-                    })
-                  : [],
-                extendChangeHandler: (e, value) => {
-                  fillChallanItems(value);
-                },
+                placeholder: 'PO Number',
+                name: 'poNumber',
               }}
-              ref={challanDateRef.ref}
+              ref={poNumberRef.ref}
             />
           </div>
           <div className='flex justify-center gap-10'>
@@ -526,6 +523,7 @@ function DeliveryChallan({ type }) {
                 name: 'challanDate',
                 value: '',
               }}
+              ref={challanDateRef.ref}
             />
           </div>
         </div>

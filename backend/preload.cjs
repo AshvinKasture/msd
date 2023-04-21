@@ -168,6 +168,11 @@ contextBridge.exposeInMainWorld('deliveryChallanModule', {
       data: poData,
     });
   },
+  getChallanList: async () => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_CHALLAN_LIST,
+    });
+  },
   getAllChallans: async (poNumber) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ALL_CHALLANS,

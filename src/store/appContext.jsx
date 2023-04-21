@@ -140,7 +140,7 @@ export const AppContextProvider = ({ children }) => {
     },
   ];
   const [page, setPage] = useState(DELIVERY_CHALLAN);
-  const [type, setType] = useState(CREATE);
+  const [type, setType] = useState(VIEW);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 
