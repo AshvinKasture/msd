@@ -20,9 +20,11 @@ function DeliveryChallan({ type }) {
   const { changePage, setContentSpinner } = useContext(AppContext);
   const [nextChallanNo, setNextChallanNo] = useState('');
   const [customerList, setCustomerList] = useState([]);
+  const [challanNoList, setChallanNoList] = useState([]);
   const [poList, setPoList] = useState([]);
   const [poDetails, setPoDetails] = useState();
   const [challanId, setChallanId] = useState(null);
+  const [challanDetails, setChallanDetails] = useState(null);
 
   const [{ poNumber, customerName, itemsTable }, dispatchState] = useReducer(
     (state, { type, payload }) => {
@@ -82,10 +84,11 @@ function DeliveryChallan({ type }) {
         getNextChallanNo();
         getPoList();
         getCustomerList();
+        setTodaysDate();
         break;
       case 'VIEW':
-        // getPoList();
-        getChallanList();
+        getPoList();
+        getChallanNoList();
         break;
       case 'EDIT':
         getPoList();
@@ -96,6 +99,10 @@ function DeliveryChallan({ type }) {
 
   function initialElementFocus() {
     poNumberRef.ref.current.focus();
+  }
+
+  function setTodaysDate() {
+    challanDateRef.ref.current.setValue(new Date());
   }
 
   async function getNextChallanNo() {
@@ -127,9 +134,10 @@ function DeliveryChallan({ type }) {
     setItemsTable(itemsTable);
   }
 
-  async function getChallanList() {
+  async function getChallanNoList() {
     const challanList = await deliveryChallanModule.getChallanList();
-    console.log(challanList);
+    setChallanNoList(challanList);
+    // console.log('here', challanList);
   }
 
   async function getPoList() {
@@ -141,6 +149,9 @@ function DeliveryChallan({ type }) {
     poNumberRef.ref.current.reset();
     customerNameRef.ref.current.reset();
     resetTable();
+    if (type === 'CREATE') {
+      getNextChallanNo();
+    }
   }
 
   async function getPoDetails(poNumber) {
@@ -149,21 +160,29 @@ function DeliveryChallan({ type }) {
     dispatchState({ type: 'SET_PO_DETAILS', payload: poDetails });
   }
 
-  async function getChallanDetails(poNumber) {
-    const poDetails = await deliveryChallanModule.getAllChallans(poNumber);
-    console.log(poDetails);
-    setPoDetails(poDetails);
+  async function getChallanDetails(challanNo) {
+    // const poDetails = await deliveryChallanModule.getAllChallans(poNumber);
+    // console.log(poDetails);
+    // setPoDetails(poDetails);
+    const { poNo, customerName, challanDate, challanItems } =
+      await deliveryChallanModule.getChallanDetails(challanNo);
+    // console.log(result);
+    poNumberRef.ref.current.setValue(poNo);
+    customerNameRef.ref.current.setValue(customerName);
+    // console.log(new Date(momentModule.formatDate(challanDate)));
+    challanDateRef.ref.current.setValue(new Date(challanDate));
+    fillChallanItems(challanItems);
+    // setChallanDetails(result);
   }
 
-  function fillChallanItems(challanId) {
-    setChallanId(challanId);
-    const challanItems = poDetails.challans.filter(
-      (challan) => challan.challan_id == challanId
-    )[0].items;
-
+  function fillChallanItems(challanItems) {
+    // setChallanId(challanId);
+    // const challanItems = poDetails.challans.filter(
+    //   (challan) => challan.challan_id == challanId
+    // )[0].items;
     const tableRows = [];
     for (let i = 0; i < challanItems.length; i++) {
-      const { drawing_no: drawingNo, description, quantity } = challanItems[i];
+      const { drawingNo, description, quantity } = challanItems[i];
       tableRows.push({ index: i, drawingNo, description, quantity });
     }
     dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
@@ -409,7 +428,7 @@ function DeliveryChallan({ type }) {
               label='Challan Date'
               componentProperties={{
                 name: 'challanDate',
-                value: new Date(),
+                // value: new Date(),
               }}
               ref={challanDateRef.ref}
             />
@@ -477,11 +496,11 @@ function DeliveryChallan({ type }) {
               componentProperties={{
                 placeholder: 'Challan Number',
                 name: 'challanNo',
-                suggestions: poList,
+                suggestions: challanNoList,
                 strict: true,
                 extendChangeHandler: () => {
                   setTimeout(() => {
-                    const { value, isValid } = poNumberRef.ref.current;
+                    const { value, isValid } = challanNoRef.ref.current;
                     if (isValid) {
                       // getPoDetails(value);
                       getChallanDetails(value);
@@ -501,6 +520,7 @@ function DeliveryChallan({ type }) {
               componentProperties={{
                 placeholder: 'PO Number',
                 name: 'poNumber',
+                disabled: true,
               }}
               ref={poNumberRef.ref}
             />
@@ -522,6 +542,7 @@ function DeliveryChallan({ type }) {
               componentProperties={{
                 name: 'challanDate',
                 value: '',
+                disabled: true,
               }}
               ref={challanDateRef.ref}
             />
@@ -778,8 +799,12 @@ function DeliveryChallan({ type }) {
         challanDate,
         itemRows: validRows,
       };
-      await deliveryChallanModule.createDeliveryChallan(poData);
+      const challanNo = await deliveryChallanModule.createDeliveryChallan(
+        poData
+      );
       resetPage();
+      type = 'VIEW';
+      await getChallanDetails(challanNo);
     }
     setContentSpinner(false);
   }

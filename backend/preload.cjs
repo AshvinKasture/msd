@@ -173,6 +173,12 @@ contextBridge.exposeInMainWorld('deliveryChallanModule', {
       code: comCodes.GET_CHALLAN_LIST,
     });
   },
+  getChallanDetails: async (challanNo) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.GET_CHALLAN_DETAILS,
+      data: challanNo,
+    });
+  },
   getAllChallans: async (poNumber) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.GET_ALL_CHALLANS,
@@ -194,6 +200,7 @@ contextBridge.exposeInMainWorld('momentModule', {
   formatDateForDatabase: (date) => {
     return moment(date).format('YYYY-MM-DD');
   },
+  getDateObject: (date) => {},
 });
 
 contextBridge.exposeInMainWorld('fileModule', {

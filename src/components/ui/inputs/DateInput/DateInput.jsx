@@ -60,6 +60,7 @@ const DateInput = forwardRef(
         name={name}
         dateFormat='dd/MM/yyyy'
         selected={selectedDate}
+        disabled={disabled}
         onChange={(date) => setSelectedDate(date)}
       />
     );

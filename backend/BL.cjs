@@ -130,6 +130,8 @@ class BusinessLayer {
           return await this.createDeliveryChallan(data);
         case comCodes.GET_CHALLAN_LIST:
           return await this.getChallanList();
+        case comCodes.GET_CHALLAN_DETAILS:
+          return await this.getChallanDetails(data);
         case comCodes.GET_ALL_CHALLANS:
           return await this.getAllChallans(data);
         case comCodes.PRINT_CHALLAN:
@@ -891,6 +893,7 @@ class BusinessLayer {
           },
         });
       }
+      return challanId;
 
       // REDIRECT TO THE VIEW OF THE CREATED CHALLAN
 
@@ -914,7 +917,8 @@ class BusinessLayer {
       const result = await this.db.exec({
         query: 'SELECT challan_id FROM delivery_challan',
       });
-      console.log(result);
+      return result.map((item) => `${item.challan_id}`);
+      // console.log(result);
     } catch (error) {
       console.error(error);
       throw error;

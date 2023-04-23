@@ -39,6 +39,7 @@ function PoMaster({ type }) {
       case 'CREATE':
         getCustomerList();
         getItems();
+        setTodaysDate();
         break;
       case 'VIEW':
         getPoList();
@@ -53,6 +54,11 @@ function PoMaster({ type }) {
   function initialElementFocus() {
     poNumberRef.ref.current.focus();
   }
+
+  function setTodaysDate() {
+    poDateRef.ref.current.setValue(new Date());
+  }
+
   async function getCustomerList() {
     setCustomerList(
       (await customerMasterModule.getCustomers()).map(
@@ -316,7 +322,7 @@ function PoMaster({ type }) {
               label='PO Date'
               componentProperties={{
                 name: 'poDate',
-                value: new Date(),
+                // value: new Date(),
               }}
               ref={poDateRef.ref}
             />

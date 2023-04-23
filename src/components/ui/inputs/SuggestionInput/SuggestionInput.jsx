@@ -40,6 +40,7 @@ const SuggestionInput = forwardRef(
                     suggestionItem.toLowerCase().includes(payload.toLowerCase())
                   )
                 : [];
+            console.log(suggestions.includes(payload));
             return {
               text: payload,
               filteredSuggestions,
