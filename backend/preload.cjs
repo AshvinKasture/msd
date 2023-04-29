@@ -9,8 +9,16 @@ contextBridge.exposeInMainWorld('pageModule', {
     });
   },
   listenPageChanges: (changePage) => {
-    ipcRenderer.on('PAGE', (event, pageName) => {
-      changePage(pageName);
+    ipcRenderer.on('PAGE', (event, { pageName, pageType }) => {
+      changePage(pageName, pageType);
+    });
+  },
+});
+
+contextBridge.exposeInMainWorld('rendererModule', {
+  listenToAppDataChanges: (setAppData) => {
+    ipcRenderer.on(comCodes.SET_APP_DATA, (event, appData) => {
+      setAppData(appData);
     });
   },
 });
@@ -185,10 +193,10 @@ contextBridge.exposeInMainWorld('deliveryChallanModule', {
       data: poNumber,
     });
   },
-  printChallan: async (challanId) => {
+  outputDeliveryChallan: async (outputData) => {
     return await ipcRenderer.invoke('COMS', {
-      code: comCodes.PRINT_CHALLAN,
-      data: challanId,
+      code: comCodes.OUTPUT_DELIVERY_CHALLAN,
+      data: outputData,
     });
   },
 });

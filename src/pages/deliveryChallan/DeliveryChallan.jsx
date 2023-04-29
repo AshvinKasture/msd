@@ -17,13 +17,13 @@ import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 import AppContext from '../../store/appContext';
 
 function DeliveryChallan({ type }) {
-  const { changePage, setContentSpinner } = useContext(AppContext);
+  const { appData, changePage, setContentSpinner } = useContext(AppContext);
   const [nextChallanNo, setNextChallanNo] = useState('');
   const [customerList, setCustomerList] = useState([]);
   const [challanNoList, setChallanNoList] = useState([]);
   const [poList, setPoList] = useState([]);
   const [poDetails, setPoDetails] = useState();
-  const [challanId, setChallanId] = useState(null);
+  const [challanNo, setChallanNo] = useState(null);
   const [challanDetails, setChallanDetails] = useState(null);
 
   const [{ poNumber, customerName, itemsTable }, dispatchState] = useReducer(
@@ -89,6 +89,13 @@ function DeliveryChallan({ type }) {
       case 'VIEW':
         getPoList();
         getChallanNoList();
+        if (appData !== null) {
+          const { challanNo } = appData;
+          resetPage();
+          // console.log(challanNo);
+          // challanNoRef.ref.current.setValue(challanNo);
+          getChallanDetails(challanNo);
+        }
         break;
       case 'EDIT':
         getPoList();
@@ -167,6 +174,7 @@ function DeliveryChallan({ type }) {
     const { poNo, customerName, challanDate, challanItems } =
       await deliveryChallanModule.getChallanDetails(challanNo);
     // console.log(result);
+    setChallanNo(challanNo);
     poNumberRef.ref.current.setValue(poNo);
     customerNameRef.ref.current.setValue(customerName);
     // console.log(new Date(momentModule.formatDate(challanDate)));
@@ -581,6 +589,7 @@ function DeliveryChallan({ type }) {
         </div>
         <div className='flex justify-center gap-x-10 my-24'>
           <ActionButton
+            className='bg-gray-500'
             onClick={(e) => {
               changePage(pages.HOME);
             }}
@@ -588,9 +597,23 @@ function DeliveryChallan({ type }) {
             Back
           </ActionButton>
           <ActionButton
+            className=''
+            onClick={(e) => {
+              deliveryChallanModule.outputDeliveryChallan({
+                challanNo,
+                type: 'SAVE',
+              });
+            }}
+          >
+            Save as PDF
+          </ActionButton>
+          <ActionButton
             className='bg-green-500'
             onClick={(e) => {
-              deliveryChallanModule.printChallan(challanId);
+              deliveryChallanModule.outputDeliveryChallan({
+                challanNo,
+                type: 'PRINT',
+              });
             }}
           >
             Print
@@ -803,8 +826,6 @@ function DeliveryChallan({ type }) {
         poData
       );
       resetPage();
-      type = 'VIEW';
-      await getChallanDetails(challanNo);
     }
     setContentSpinner(false);
   }

@@ -2,7 +2,12 @@ const { ipcMain, webFrame, BrowserWindow } = require('electron');
 const path = require('path');
 const XLSX = require('xlsx');
 const Database = require('./database.cjs');
-const { pages, windowCodes, comCodes } = require('./codes.cjs');
+const {
+  pages,
+  windowCodes,
+  comCodes,
+  types: typeCodes,
+} = require('./codes.cjs');
 const fs = require('fs');
 
 class BusinessLayer {
@@ -134,8 +139,8 @@ class BusinessLayer {
           return await this.getChallanDetails(data);
         case comCodes.GET_ALL_CHALLANS:
           return await this.getAllChallans(data);
-        case comCodes.PRINT_CHALLAN:
-          return await this.printDeliveryChallan(data);
+        case comCodes.OUTPUT_DELIVERY_CHALLAN:
+          return await this.outputDeliveryChallan(data);
         case comCodes.GET_PRINT_DETAILS:
           return this.printableChallanData;
         case 'PRINT_PAGE':
@@ -893,9 +898,15 @@ class BusinessLayer {
           },
         });
       }
-      return challanId;
 
       // REDIRECT TO THE VIEW OF THE CREATED CHALLAN
+
+      this.windowHandeler.setAppData({ challanNo: challanId });
+      this.windowHandeler.changePage({
+        pageName: pages.DELIVERY_CHALLAN,
+        pageType: typeCodes.VIEW,
+      });
+      return challanId;
 
       // const buttonClicked = this.windowHandeler.showConfirmationBox({
       //   message: 'Delivery Challan created. Do you want to print it?',
@@ -966,7 +977,7 @@ class BusinessLayer {
     try {
       const result = await this.db.exec({
         query:
-          'SELECT dc.challan_id AS challanNo, dc.created_at AS challanDate, pm.po_no AS poNo, pm.created_at AS poDate, cm.customer_name AS customerName, cm.customer_address AS customerAddress, cm.gst_no AS gstNo FROM delivery_challan dc, po_master pm, customer_master cm WHERE dc.challan_id=$challanId AND dc.po_id = pm.po_id AND pm.customer_id = cm.customer_id',
+          'SELECT dc.challan_id AS challanNo, dc.challan_date AS challanDate, pm.po_no AS poNo, pm.po_date AS poDate, cm.customer_name AS customerName, cm.customer_address AS customerAddress, cm.customer_code as customerCode, cm.gst_no AS gstNo FROM delivery_challan dc, po_master pm, customer_master cm WHERE dc.challan_id=$challanId AND dc.po_id = pm.po_id AND pm.customer_id = cm.customer_id',
         params: {
           $challanId: challanId,
         },
@@ -989,20 +1000,8 @@ class BusinessLayer {
     }
   }
 
-  async printDeliveryChallan(challanId) {
-    const savePath = this.windowHandeler.saveDialogBox({
-      message: 'Save Delivery Challan',
-      filters: [
-        {
-          name: 'PDF Files',
-          extensions: ['pdf'],
-        },
-      ],
-    });
-    if (!savePath) {
-      return;
-    }
-    this.printableChallanData = await this.getChallanDetails(challanId);
+  async outputDeliveryChallan({ challanNo, type }) {
+    this.printableChallanData = await this.getChallanDetails(challanNo);
     this.printableWindow = new BrowserWindow({
       title: 'Print Window',
       transparent: true,
@@ -1015,8 +1014,23 @@ class BusinessLayer {
     });
     this.printableWindow.maximize();
     this.printableWindow.loadFile('template/index.html');
-    setTimeout(
-      async function () {
+
+    let outputFunction;
+
+    if (type == 'SAVE') {
+      outputFunction = async function () {
+        const savePath = this.windowHandeler.saveDialogBox({
+          message: 'Save Delivery Challan',
+          filters: [
+            {
+              name: 'PDF Files',
+              extensions: ['pdf'],
+            },
+          ],
+        });
+        if (!savePath) {
+          return;
+        }
         const data = await this.printableWindow.webContents.printToPDF({
           pageSize: 'A4',
           margins: {
@@ -1026,11 +1040,20 @@ class BusinessLayer {
             right: 0,
           },
         });
-        // const pdfPath = path.join(os.homedir(), 'Desktop', 'temp.pdf');
         fs.writeFile(savePath, data, (error) => console.error(error));
-      }.bind(this),
-      1000
-    );
+        this.windowHandeler.showInfoBox({
+          message: `PDF saved at ${savePath}`,
+        });
+      };
+    } else if (type == 'PRINT') {
+      outputFunction = function () {
+        this.printableWindow.webContents.print({
+          color: false,
+        });
+      };
+    }
+
+    setTimeout(outputFunction.bind(this), 1000);
   }
 
   async printPage() {
@@ -1040,7 +1063,6 @@ class BusinessLayer {
   async changeZoom(zoomValue) {
     // this.windowHandeler.changeZoom(zoomValue);
     // webFrame.setZoomFactor(zoomValue);
-    console.log(webFrame);
   }
 }
 

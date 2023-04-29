@@ -11,6 +11,7 @@ function fillData({
   challanDate,
   poNo,
   poDate,
+  customerCode,
   challanItems,
 }) {
   document.getElementById('customer-name').innerText = customerName;
@@ -22,6 +23,7 @@ function fillData({
   document.getElementById('po-no').innerText = poNo;
   document.getElementById('po-date').innerText =
     momentModule.formatDate(poDate);
+  document.getElementById('customer-code').innerText = customerCode;
   for (let i = 0; i < challanItems.length; i++) {
     const { drawingNo, description, quantity } = challanItems[i];
     const row = createTableRow(i + 1, drawingNo, description, quantity);

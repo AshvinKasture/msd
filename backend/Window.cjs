@@ -83,8 +83,12 @@ class WindowHandler {
     }, 200);
   }
 
-  changePage(pageName) {
-    this.window.webContents.send('PAGE', pageName);
+  changePage({ pageName, pageType }) {
+    this.window.webContents.send('PAGE', { pageName, pageType });
+  }
+
+  setAppData(appData) {
+    this.window.webContents.send('SET_APP_DATA', appData);
   }
 
   saveDialogBox({ title = this.appName, message, filters = [] }) {
