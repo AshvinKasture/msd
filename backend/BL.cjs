@@ -49,7 +49,7 @@ class BusinessLayer {
       },
       {
         query:
-          'CREATE TABLE delivery_challan(challan_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, challan_date DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (po_id) REFERENCES po_master(po_id))',
+          'CREATE TABLE delivery_challan(challan_id INTEGER PRIMARY KEY AUTOINCREMENT, po_id INTEGER, challan_date DATETIME, cancelled INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (po_id) REFERENCES po_master(po_id))',
       },
       {
         query:
@@ -143,6 +143,10 @@ class BusinessLayer {
           return await this.outputDeliveryChallan(data);
         case comCodes.GET_PRINT_DETAILS:
           return this.printableChallanData;
+        case comCodes.EDIT_DELIVERY_CHALLAN:
+          return await this.editDeliveryChallan(data);
+        case comCodes.DELETE_DELIVERY_CHALLAN:
+          return await this.deleteDeliveryChallan(data);
         case 'PRINT_PAGE':
           return await this.printPage();
         case 'CHANGE_ZOOM':
@@ -899,22 +903,18 @@ class BusinessLayer {
         });
       }
 
+      this.windowHandeler.showInfoBox({
+        message: `Challan No ${challanId} Created`,
+      });
+
       // REDIRECT TO THE VIEW OF THE CREATED CHALLAN
 
-      this.windowHandeler.setAppData({ challanNo: challanId });
-      this.windowHandeler.changePage({
-        pageName: pages.DELIVERY_CHALLAN,
-        pageType: typeCodes.VIEW,
-      });
-      return challanId;
-
-      // const buttonClicked = this.windowHandeler.showConfirmationBox({
-      //   message: 'Delivery Challan created. Do you want to print it?',
+      // this.windowHandeler.setAppData({ challanNo: challanId });
+      // this.windowHandeler.changePage({
+      //   pageName: pages.DELIVERY_CHALLAN,
+      //   pageType: typeCodes.VIEW,
       // });
-      // console.log(buttonClicked);
-      // if (buttonClicked === 0) {
-      //   return await this.printDeliveryChallan(challanId);
-      // }
+      return challanId;
     } catch (error) {
       console.error(error);
       this.windowHandeler.showErrorBox({
@@ -977,7 +977,7 @@ class BusinessLayer {
     try {
       const result = await this.db.exec({
         query:
-          'SELECT dc.challan_id AS challanNo, dc.challan_date AS challanDate, pm.po_no AS poNo, pm.po_date AS poDate, cm.customer_name AS customerName, cm.customer_address AS customerAddress, cm.customer_code as customerCode, cm.gst_no AS gstNo FROM delivery_challan dc, po_master pm, customer_master cm WHERE dc.challan_id=$challanId AND dc.po_id = pm.po_id AND pm.customer_id = cm.customer_id',
+          'SELECT dc.challan_id AS challanNo, dc.challan_date AS challanDate, dc.cancelled AS isCancelled, pm.po_id AS poId, pm.po_no AS poNo, pm.po_date AS poDate, cm.customer_name AS customerName, cm.customer_address AS customerAddress, cm.customer_code as customerCode, cm.gst_no AS gstNo FROM delivery_challan dc, po_master pm, customer_master cm WHERE dc.challan_id=$challanId AND dc.po_id = pm.po_id AND pm.customer_id = cm.customer_id',
         params: {
           $challanId: challanId,
         },
@@ -988,7 +988,7 @@ class BusinessLayer {
       const challanDetails = result[0];
       challanDetails.challanItems = await this.db.exec({
         query:
-          'SELECT di.quantity AS quantity, im.drawing_no AS drawingNo, im.description AS description FROM delivery_items di, po_items pi, item_master im WHERE di.challan_id=$challanId AND di.entry_id = pi.entry_id AND pi.item_id = im.item_id',
+          'SELECT di.entry_id as entryId, di.quantity AS quantity, im.item_id AS itemId, im.drawing_no AS drawingNo, im.description AS description FROM delivery_items di, po_items pi, item_master im WHERE di.challan_id=$challanId AND di.entry_id = pi.entry_id AND pi.item_id = im.item_id',
         params: {
           $challanId: challanId,
         },
@@ -1001,59 +1001,174 @@ class BusinessLayer {
   }
 
   async outputDeliveryChallan({ challanNo, type }) {
-    this.printableChallanData = await this.getChallanDetails(challanNo);
-    this.printableWindow = new BrowserWindow({
-      title: 'Print Window',
-      transparent: true,
-      show: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: true,
-        preload: path.join(__dirname, 'preload.cjs'),
-      },
-    });
-    this.printableWindow.maximize();
-    this.printableWindow.loadFile('template/index.html');
+    try {
+      this.printableChallanData = await this.getChallanDetails(challanNo);
+      this.printableWindow = new BrowserWindow({
+        title: 'Print Window',
+        transparent: true,
+        show: false,
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: true,
+          preload: path.join(__dirname, 'preload.cjs'),
+        },
+      });
+      this.printableWindow.maximize();
+      this.printableWindow.loadFile('template/index.html');
+      // this.printableWindow.webContents.openDevTools({ mode: 'detach' });
 
-    let outputFunction;
+      let outputFunction;
 
-    if (type == 'SAVE') {
-      outputFunction = async function () {
-        const savePath = this.windowHandeler.saveDialogBox({
-          message: 'Save Delivery Challan',
-          filters: [
-            {
-              name: 'PDF Files',
-              extensions: ['pdf'],
-            },
-          ],
-        });
-        if (!savePath) {
-          return;
-        }
-        const data = await this.printableWindow.webContents.printToPDF({
-          pageSize: 'A4',
-          margins: {
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0,
+      if (type == 'SAVE') {
+        outputFunction = async function () {
+          const savePath = this.windowHandeler.saveDialogBox({
+            message: 'Save Delivery Challan',
+            filters: [
+              {
+                name: 'PDF Files',
+                extensions: ['pdf'],
+              },
+            ],
+          });
+          if (!savePath) {
+            return;
+          }
+          const data = await this.printableWindow.webContents.printToPDF({
+            pageSize: 'A4',
+          });
+          fs.writeFile(savePath, data, (error) => console.error(error));
+          this.windowHandeler.showInfoBox({
+            message: `PDF saved at ${savePath}`,
+          });
+          this.printableWindow.close();
+          this.printableWindow = null;
+        };
+      } else if (type == 'PRINT') {
+        outputFunction = function () {
+          this.printableWindow.webContents.print({
+            color: false,
+          });
+          this.printableWindow.close();
+          this.printableWindow = null;
+        };
+      }
+
+      setTimeout(outputFunction.bind(this), 1000);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async editDeliveryChallan({
+    challanNumber,
+    poNumber,
+    challanDate,
+    itemRows,
+  }) {
+    try {
+      let result = await this.getChallanDetails(challanNumber);
+      const { challanItems } = result;
+      for (let i = 0; i < challanItems.length; i++) {
+        const { entryId, quantity } = challanItems[i];
+        await this.db.exec({
+          query:
+            'UPDATE po_items SET quantity_completed=quantity_completed-$quantity WHERE entry_id=$entryId',
+          params: {
+            $entryId: entryId,
+            $quantity: quantity,
           },
         });
-        fs.writeFile(savePath, data, (error) => console.error(error));
-        this.windowHandeler.showInfoBox({
-          message: `PDF saved at ${savePath}`,
+        await this.db.exec({
+          query:
+            'DELETE FROM delivery_items WHERE challan_id=$challanNo AND entry_id=$entryId',
+          params: {
+            $challanNo: challanNumber,
+            $entryId: entryId,
+          },
         });
-      };
-    } else if (type == 'PRINT') {
-      outputFunction = function () {
-        this.printableWindow.webContents.print({
-          color: false,
-        });
-      };
-    }
+      }
+      const { poId } = await this.getPoDetails(poNumber);
+      await this.db.exec({
+        query:
+          'UPDATE delivery_challan SET po_id=${poId}, challan_date=${challanDate} WHERE challan_id=${challanNumber}',
+        params: {
+          $challanNumber: challanNumber,
+          $poId: poId,
+          $challanDate: challanDate,
+        },
+      });
 
-    setTimeout(outputFunction.bind(this), 1000);
+      for (let i = 0; i < itemRows.length; i++) {
+        const { drawingNo, quantity } = itemRows[i];
+        const { item_id: itemId } = await this.getItemDetails(drawingNo);
+        const { entry_id: entryId } = await this.getPoEntry(poId, itemId);
+        await this.db.exec({
+          query:
+            'INSERT INTO delivery_items(challan_id, entry_id, quantity) VALUES($challanId, $entryId, $quantity)',
+          params: {
+            $challanId: challanId,
+            $entryId: entryId,
+            $quantity: +quantity,
+          },
+        });
+        await this.db.exec({
+          query:
+            'UPDATE po_items SET quantity_completed = quantity_completed + $quantity WHERE entry_id=$entryId',
+          params: {
+            $entryId: entryId,
+            $quantity: +quantity,
+          },
+        });
+      }
+
+      this.windowHandeler.showInfoBox({
+        message: `Deliver challan No ${challanNumber} updated`,
+      });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async deleteDeliveryChallan(challanNo) {
+    try {
+      const { isCancelled, challanItems } = await this.getChallanDetails(
+        challanNo
+      );
+      if (isCancelled) {
+        this.windowHandeler.showInfoBox({
+          message: `Challan No ${challanNo} is already deleted`,
+        });
+        return false;
+      }
+      for (let i = 0; i < challanItems.length; i++) {
+        const { entryId, quantity } = challanItems[i];
+        this.db.exec({
+          query:
+            'UPDATE po_items SET quantity_completed = quantity_completed - $quantity WHERE entry_id=$entryId',
+          params: {
+            $entryId: entryId,
+            $quantity: quantity,
+          },
+        });
+      }
+      await this.db.exec({
+        query:
+          'UPDATE delivery_challan SET cancelled=1 WHERE challan_id=$challanNo',
+        params: {
+          $challanNo: challanNo,
+        },
+      });
+
+      this.windowHandeler.showInfoBox({
+        message: `Challan No ${challanNo} deleted`,
+      });
+      return true;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
   async printPage() {

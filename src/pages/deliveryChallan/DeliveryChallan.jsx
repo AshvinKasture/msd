@@ -17,7 +17,7 @@ import useNavigationShortcuts from '../../hooks/useNavigationShortcuts';
 import AppContext from '../../store/appContext';
 
 function DeliveryChallan({ type }) {
-  const { appData, changePage, setContentSpinner } = useContext(AppContext);
+  const { changePage, setContentSpinner } = useContext(AppContext);
   const [nextChallanNo, setNextChallanNo] = useState('');
   const [customerList, setCustomerList] = useState([]);
   const [challanNoList, setChallanNoList] = useState([]);
@@ -89,18 +89,24 @@ function DeliveryChallan({ type }) {
       case 'VIEW':
         getPoList();
         getChallanNoList();
-        if (appData !== null) {
-          const { challanNo } = appData;
-          resetPage();
-          // console.log(challanNo);
-          // challanNoRef.ref.current.setValue(challanNo);
-          getChallanDetails(challanNo);
-        }
+        // if (appData !== null) {
+        //   const { challanNo } = appData;
+        //   setAppData(null);
+        //   resetPage();
+        //   console.log(challanNoRef);
+        //   console.log(challanNo);
+        //   challanNoRef.ref.current.setValue(challanNo);
+        //   getChallanDetails(challanNo);
+        // }
         break;
       case 'EDIT':
         getPoList();
-        getCustomerList();
-        getItems();
+        getChallanNoList();
+        break;
+      case 'DELETE':
+        getPoList();
+        getChallanNoList();
+        break;
     }
   }, [type]);
 
@@ -162,20 +168,28 @@ function DeliveryChallan({ type }) {
   }
 
   async function getPoDetails(poNumber) {
+    console.log('Getting PO Details');
     const poDetails = await poMasterModule.getPoDetails(poNumber);
     customerNameRef.ref.current.setValue(poDetails.customerName);
     dispatchState({ type: 'SET_PO_DETAILS', payload: poDetails });
+    dispatchTableState({ type: 'RESET' });
   }
 
   async function getChallanDetails(challanNo) {
     // const poDetails = await deliveryChallanModule.getAllChallans(poNumber);
     // console.log(poDetails);
     // setPoDetails(poDetails);
-    const { poNo, customerName, challanDate, challanItems } =
+    const { poNo, customerName, challanDate, challanItems, isCancelled } =
       await deliveryChallanModule.getChallanDetails(challanNo);
     // console.log(result);
     setChallanNo(challanNo);
     poNumberRef.ref.current.setValue(poNo);
+    if (isCancelled) {
+      document.getElementById('cancelled-stamp').classList.remove('hidden');
+    } else {
+      document.getElementById('cancelled-stamp').classList.add('hidden');
+    }
+    await getPoDetails(poNo);
     customerNameRef.ref.current.setValue(customerName);
     // console.log(new Date(momentModule.formatDate(challanDate)));
     challanDateRef.ref.current.setValue(new Date(challanDate));
@@ -296,10 +310,19 @@ function DeliveryChallan({ type }) {
           newRowState[index] = newRowData;
           return { ...state, rows: newRowState };
         case 'SET_ROWS':
+          const rows = [];
+          for (let i = 0; i < payload.length; i++) {
+            rows.push({
+              ...payload[i],
+              quantityAllowed:
+                itemsTable.quantityMapping[payload[i].drawingNo] +
+                payload[i].quantity,
+            });
+          }
           return {
             focusedIndex: -1,
             lastRowIndex: payload.length - 1,
-            rows: payload,
+            rows,
           };
         case 'DELETE_ROW':
           newRowState = [];
@@ -462,6 +485,7 @@ function DeliveryChallan({ type }) {
           </div>
           <div className='table-row-group'>
             {tableState.rows.map((tableRow) => {
+              // console.log(tableRow);
               return (
                 <TableRow
                   key={tableRow.index}
@@ -523,12 +547,24 @@ function DeliveryChallan({ type }) {
               ref={challanNoRef.ref}
             />
             <FormField
-              component={TextInput}
-              label='Po Number'
+              component={SuggestionInput}
+              label='PO Number'
               componentProperties={{
                 placeholder: 'PO Number',
                 name: 'poNumber',
-                disabled: true,
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
               }}
               ref={poNumberRef.ref}
             />
@@ -554,6 +590,13 @@ function DeliveryChallan({ type }) {
               }}
               ref={challanDateRef.ref}
             />
+          </div>
+
+          <div
+            id='cancelled-stamp'
+            className='border-8 border-red-400 border-solid w-fit mx-auto mt-5 p-2 text-red-400 font-extrabold text-lg hidden'
+          >
+            Cancelled
           </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
@@ -623,41 +666,76 @@ function DeliveryChallan({ type }) {
     ),
     EDIT: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={SuggestionInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              suggestions: poList,
-              strict: true,
-              extendChangeHandler: () => {
-                setTimeout(() => {
-                  const { value, isValid } = poNumberRef.ref.current;
-                  if (isValid) {
-                    getPoDetails(value);
-                  }
-                }, 100);
-              },
-              extendFillHandler: (value) => {
-                getPoDetails(value);
-              },
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={SuggestionInput}
-            label='Customer Name'
-            componentProperties={{
-              placeholder: 'Customer Name',
-              name: 'customerName',
-              suggestions: customerList,
-              strict: true,
-              dispatchNavigationShortcut,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='Challan Number'
+              componentProperties={{
+                placeholder: 'Challan Number',
+                name: 'challanNo',
+                suggestions: challanNoList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = challanNoRef.ref.current;
+                    if (isValid) {
+                      // getPoDetails(value);
+                      getChallanDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  // getPoDetails(value);
+                  getChallanDetails(value);
+                },
+              }}
+              ref={challanNoRef.ref}
+            />
+            <FormField
+              component={SuggestionInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={TextInput}
+              label='Customer Name'
+              componentProperties={{
+                name: 'customerName',
+                value: poDetails ? poDetails.customerName : '',
+                disabled: true,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='Challan Date'
+              componentProperties={{
+                name: 'challanDate',
+                value: '',
+              }}
+              ref={challanDateRef.ref}
+            />
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -679,6 +757,7 @@ function DeliveryChallan({ type }) {
           </div>
           <div className='table-row-group'>
             {tableState.rows.map((tableRow) => {
+              // console.log(tableRow);
               return (
                 <TableRow
                   key={tableRow.index}
@@ -688,6 +767,7 @@ function DeliveryChallan({ type }) {
                   setDescription={setDescription}
                   setQuantity={setQuantity}
                   itemsTable={itemsTable}
+                  showQuantityLimit={true}
                   disableDelete={tableState.lastRowIndex === 0}
                   deleteRowHandler={deleteRow}
                   focusFirstElement={tableRow.index === tableState.focusedIndex}
@@ -696,22 +776,16 @@ function DeliveryChallan({ type }) {
             })}
           </div>
         </div>
-        <ActionButton
-          className='block bg-white text-black border hover:bg-black hover:text-white border-black mt-5'
-          onClick={addRow}
-        >
-          Add Row
-        </ActionButton>
         <div className='flex justify-center gap-x-10 my-24'>
           <ActionButton
-            className='bg-red-500'
             onClick={(e) => {
-              resetPage();
+              changePage(pages.HOME);
             }}
           >
-            Discard
+            Back
           </ActionButton>
-          <ActionButton className='bg-green-500' onClick={editPo}>
+
+          <ActionButton className='bg-green-500' onClick={editDeliveryChallan}>
             Save
           </ActionButton>
         </div>
@@ -719,39 +793,83 @@ function DeliveryChallan({ type }) {
     ),
     DELETE: (
       <Fragment>
-        <div className='flex justify-center gap-10'>
-          <FormField
-            component={SuggestionInput}
-            label='PO Number'
-            componentProperties={{
-              placeholder: 'PO Number',
-              name: 'poNumber',
-              suggestions: poList,
-              strict: true,
-              extendChangeHandler: () => {
-                setTimeout(() => {
-                  const { value, isValid } = poNumberRef.ref.current;
-                  if (isValid) {
-                    getPoDetails(value);
-                  }
-                }, 100);
-              },
-              extendFillHandler: (value) => {
-                getPoDetails(value);
-              },
-            }}
-            ref={poNumberRef.ref}
-          />
-          <FormField
-            component={TextInput}
-            label='Customer Name'
-            componentProperties={{
-              name: 'customerName',
-              value: '',
-              disabled: true,
-            }}
-            ref={customerNameRef.ref}
-          />
+        <div className='flex flex-col'>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={SuggestionInput}
+              label='Challan Number'
+              componentProperties={{
+                placeholder: 'Challan Number',
+                name: 'challanNo',
+                suggestions: challanNoList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = challanNoRef.ref.current;
+                    if (isValid) {
+                      // getPoDetails(value);
+                      getChallanDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  // getPoDetails(value);
+                  getChallanDetails(value);
+                },
+              }}
+              ref={challanNoRef.ref}
+            />
+            <FormField
+              component={SuggestionInput}
+              label='PO Number'
+              componentProperties={{
+                placeholder: 'PO Number',
+                name: 'poNumber',
+                suggestions: poList,
+                strict: true,
+                extendChangeHandler: () => {
+                  setTimeout(() => {
+                    const { value, isValid } = poNumberRef.ref.current;
+                    if (isValid) {
+                      getPoDetails(value);
+                    }
+                  }, 100);
+                },
+                extendFillHandler: (value) => {
+                  getPoDetails(value);
+                },
+              }}
+              ref={poNumberRef.ref}
+            />
+          </div>
+          <div className='flex justify-center gap-10'>
+            <FormField
+              component={TextInput}
+              label='Customer Name'
+              componentProperties={{
+                name: 'customerName',
+                value: poDetails ? poDetails.customerName : '',
+                disabled: true,
+              }}
+              ref={customerNameRef.ref}
+            />
+            <FormField
+              component={DateInput}
+              label='Challan Date'
+              componentProperties={{
+                name: 'challanDate',
+                value: '',
+                disabled: true,
+              }}
+              ref={challanDateRef.ref}
+            />
+          </div>
+          <div
+            id='cancelled-stamp'
+            className='border-8 border-red-400 border-solid w-fit mx-auto mt-5 p-2 text-red-400 font-extrabold text-lg hidden'
+          >
+            Cancelled
+          </div>
         </div>
         <div className='w-full mx-auto mt-10 border border-black table border-collapse'>
           <div className='table-header-group text-center font-bold text-lg'>
@@ -784,13 +902,19 @@ function DeliveryChallan({ type }) {
             })}
           </div>
         </div>
-
-        <ActionButton
-          className='block mx-auto my-10 bg-red-500'
-          onClick={deletePo}
-        >
-          Delete
-        </ActionButton>
+        <div className='flex justify-center gap-x-10 my-24'>
+          <ActionButton
+            className='bg-gray-500'
+            onClick={(e) => {
+              changePage(pages.HOME);
+            }}
+          >
+            Back
+          </ActionButton>
+          <ActionButton className='bg-red-500' onClick={deleteDeliveryChallan}>
+            Delete
+          </ActionButton>
+        </div>
       </Fragment>
     ),
   };
@@ -804,7 +928,7 @@ function DeliveryChallan({ type }) {
   }
 
   async function createDeliveryChallan() {
-    // setContentSpinner(true);
+    setContentSpinner(true);
     const poNumber = poNumberRef.ref.current.value;
     const challanDate = challanDateRef.ref.current.value;
     const validRows = [];
@@ -815,10 +939,9 @@ function DeliveryChallan({ type }) {
       }
     }
     // console.log({ poNumber, customerName, validRows });
-    if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
+    if (!(poNumber === '' || validRows.length < 1)) {
       const poData = {
         poNumber,
-        customerName,
         challanDate,
         itemRows: validRows,
       };
@@ -830,10 +953,11 @@ function DeliveryChallan({ type }) {
     setContentSpinner(false);
   }
 
-  async function editPo() {
+  async function editDeliveryChallan() {
     setContentSpinner(true);
+    const challanNumber = challanNoRef.ref.current.value;
     const poNumber = poNumberRef.ref.current.value;
-    const customerName = customerNameRef.ref.current.value;
+    const challanDate = challanDateRef.ref.current.value;
     const validRows = [];
     for (let i = 0; i < tableState.rows.length; i++) {
       const row = tableState.rows[i];
@@ -841,19 +965,25 @@ function DeliveryChallan({ type }) {
         validRows.push(row);
       }
     }
-    if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
-      const poData = { poNumber, customerName, itemRows: validRows };
-      await poMasterModule.editPo(poData);
+    // console.log({ poNumber, customerName, validRows });
+    if (!(challanNumber === '' || poNumber === '' || validRows.length < 1)) {
+      const challanData = {
+        challanNumber,
+        poNumber,
+        challanDate,
+        itemRows: validRows,
+      };
+      await deliveryChallanModule.editDeliveryChallan(challanData);
       resetPage();
     }
     setContentSpinner(false);
   }
 
-  async function deletePo() {
+  async function deleteDeliveryChallan() {
     setContentSpinner(true);
-    const poNumber = poNumberRef.ref.current.value;
-    if (poNumber !== '') {
-      await poMasterModule.deletePo(poNumber);
+    const challanNo = challanNoRef.ref.current.value;
+    if (challanNo !== '') {
+      await deliveryChallanModule.deleteDeliveryChallan(challanNo);
       resetPage();
     }
     setContentSpinner(false);

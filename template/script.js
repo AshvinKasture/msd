@@ -24,16 +24,21 @@ function fillData({
   document.getElementById('po-date').innerText =
     momentModule.formatDate(poDate);
   document.getElementById('customer-code').innerText = customerCode;
-  for (let i = 0; i < challanItems.length; i++) {
-    const { drawingNo, description, quantity } = challanItems[i];
-    const row = createTableRow(i + 1, drawingNo, description, quantity);
+  let row;
+  for (let i = 0; i < 10; i++) {
+    if (i < challanItems.length) {
+      const { drawingNo, description, quantity } = challanItems[i];
+      row = createTableRow(i + 1, drawingNo, description, quantity);
+    } else {
+      row = createTableRow(i+1, '', '', '');
+    }
     document.getElementById('challan-table-body').appendChild(row);
   }
 }
 
 function createTableRow(srNo, drawingNo, description, quantity) {
   const row = document.createElement('tr');
-  row.appendChild(createTableCell('sr-no', `${srNo}.`));
+  row.appendChild(createTableCell('sr-no', `${srNo}${srNo !== '' ? '.' : ''}`));
   row.appendChild(createTableCell('description', description));
   row.appendChild(createTableCell('item-no', drawingNo));
   row.appendChild(createTableCell('quantity', quantity));

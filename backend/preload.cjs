@@ -15,13 +15,7 @@ contextBridge.exposeInMainWorld('pageModule', {
   },
 });
 
-contextBridge.exposeInMainWorld('rendererModule', {
-  listenToAppDataChanges: (setAppData) => {
-    ipcRenderer.on(comCodes.SET_APP_DATA, (event, appData) => {
-      setAppData(appData);
-    });
-  },
-});
+contextBridge.exposeInMainWorld('rendererModule', {});
 
 contextBridge.exposeInMainWorld('menuModule', {
   openWindow: (windowName) => {
@@ -197,6 +191,18 @@ contextBridge.exposeInMainWorld('deliveryChallanModule', {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.OUTPUT_DELIVERY_CHALLAN,
       data: outputData,
+    });
+  },
+  editDeliveryChallan: async (challanData) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.EDIT_DELIVERY_CHALLAN,
+      data: challanData,
+    });
+  },
+  deleteDeliveryChallan: async (challanNo) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.DELETE_DELIVERY_CHALLAN,
+      data: challanNo,
     });
   },
 });

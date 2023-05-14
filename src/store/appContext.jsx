@@ -5,7 +5,6 @@ const AppContext = createContext({
   appName: '',
   changePage: (pageName, type) => {},
   navMenu: [],
-  appData: null,
   contentSpinner: null,
   setContentSpinner: (value) => {},
 });
@@ -127,9 +126,13 @@ export const AppContextProvider = ({ children }) => {
         },
         {
           text: 'Modify',
+          pageValue: DELIVERY_CHALLAN,
+          type: EDIT,
         },
         {
           text: 'Delete',
+          pageValue: DELIVERY_CHALLAN,
+          type: DELETE,
         },
       ],
     },
@@ -141,9 +144,8 @@ export const AppContextProvider = ({ children }) => {
     },
   ];
   const [page, setPage] = useState(DELIVERY_CHALLAN);
-  const [type, setType] = useState(VIEW);
+  const [type, setType] = useState(DELETE);
   const [contentSpinner, setContentSpinner] = useState(false);
-  const [appData, setAppData] = useState(null);
   const appName = 'Monthly Schedule and Dispatch';
 
   const changePage = (pageName, type = null) => {
@@ -153,8 +155,6 @@ export const AppContextProvider = ({ children }) => {
 
   pageModule.listenPageChanges(changePage);
 
-  rendererModule.listenToAppDataChanges(setAppData);
-
   return (
     <AppContext.Provider
       value={{
@@ -163,7 +163,6 @@ export const AppContextProvider = ({ children }) => {
         changePage,
         appName,
         navMenu,
-        appData,
         contentSpinner,
         setContentSpinner,
         // pages: { HOME, CREATE_ITEM_MASTER },

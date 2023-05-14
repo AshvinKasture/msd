@@ -22,3 +22,8 @@ export function makeCaps(value) {
 export function isGstNo(value) {
   return value.match(/^( )?[a-zA-Z0-9]*$/g) !== null;
 }
+
+export function isBlank(value) {
+  console.log(value == '');
+  return value == '';
+}

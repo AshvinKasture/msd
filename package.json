@@ -8,7 +8,7 @@
     "react": "vite",
     "build:react": "vite build",
     "preview:react": "vite preview",
-    "electron": "nodemon --watch . --exec electron .",
+    "electron": "nodemon --watch . --exec electron --trace-warnings .",
     "dev": "concurrently -k \"npm run dev:react\" \"wait-on tcp:3000 && npm run dev:electron\""
   },
   "dependencies": {

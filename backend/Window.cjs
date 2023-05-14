@@ -87,10 +87,6 @@ class WindowHandler {
     this.window.webContents.send('PAGE', { pageName, pageType });
   }
 
-  setAppData(appData) {
-    this.window.webContents.send('SET_APP_DATA', appData);
-  }
-
   saveDialogBox({ title = this.appName, message, filters = [] }) {
     const savePath = dialog.showSaveDialogSync(this.window, {
       title,

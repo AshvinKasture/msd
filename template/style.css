@@ -7,10 +7,15 @@ body {
 
 .header {
   display: flex;
+  align-items: center;
   width: fit-content;
   margin: auto;
   margin-top: 5mm;
   column-gap: 5mm;
+}
+
+.logo {
+  margin-right: auto;
 }
 
 .company-info {
@@ -62,7 +67,8 @@ body {
 
 .challan-info > div {
   flex: 1;
-  border: 0.5mm solid black;
+  border: 0.7mm solid black;
+  border-bottom: none;
   padding: 2mm;
 }
 
@@ -134,10 +140,17 @@ th {
 
 table {
   width: 100%;
+  /* border-top: none; */
+  border-right: none;
+  border-width: 0.7mm;
 }
 
 th {
   padding: 1mm;
+}
+
+#challan-table-body tr {
+  height: 5mm;
 }
 
 .sr-no-header {
@@ -146,13 +159,22 @@ th {
 }
 
 .description-header {
-  /* width: 82.9mm; */
   width: 43%;
 }
 
-.second-header {
-  /* width: 17.5mm; */
-  flex: 1;
+.item-no-header {
+  width: 15%;
+}
+
+.quantity-header {
+  width: 10%;
+}
+
+.value-header {
+  width: 12.5%;
+}
+
+.remark-header {
   width: 12.5%;
 }
 
@@ -166,29 +188,45 @@ tr > td {
 .value,
 .remark {
   text-align: center;
+  /* vertical-align: baseline; */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 5mm;
 }
 
 .description {
   padding-left: 2mm;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 5mm;
+  height: 15mm;
+  border: none;
 }
 
 .footer {
   position: absolute;
   bottom: 0;
-  /* border: 1px solid black; */
   width: 100%;
-  /* padding: 10mm; */
-  /* margin-left: auto; */
-  /* background-color: yellow; */
 }
+
+/* td {
+  line-height: 1em !important;
+  max-width: 100px !important;
+  height: 3em !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+} */
 
 .space {
   height: 20mm;
-  /* background-color: red; */
 }
 
 .labels {
-  /* background-color: green; */
   padding: 5mm;
   display: flex;
   justify-content: space-between;

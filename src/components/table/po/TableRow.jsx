@@ -2,7 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import TextInput from '../../../components/ui/inputs/TextInput/TextInput';
 import SuggestionInput from '../../../components/ui/inputs/SuggestionInput/SuggestionInput';
 import useNavigationShortcuts from '../../../hooks/useNavigationShortcuts';
-import { isPositiveInteger } from '../../../helpers/basicValidations';
+import { isBlank, isPositiveInteger } from '../../../helpers/basicValidations';
 import DeleteIcon from '../../../assets/deleteIcon';
 
 function TableRow({
@@ -18,6 +18,7 @@ function TableRow({
   disableDelete = false,
   deleteRowHandler = null,
 }) {
+  // console.log(itemsTable);
   const [
     [drawingNoRef, descriptionRef, quantityRef],
     dispatchNavigationShortcut,
@@ -103,19 +104,23 @@ function TableRow({
           }
           acceptedInput={({ oldValue, newValue }) => {
             if (showQuantityLimit) {
-              return isPositiveInteger(newValue) &&
-                +newValue <= +quantityAllowed &&
-                +newValue > 0
+              return isBlank(newValue) ||
+                (isPositiveInteger(newValue) &&
+                  +newValue <= +quantityAllowed &&
+                  +newValue > 0)
                 ? newValue
                 : oldValue;
             } else {
-              return isPositiveInteger(newValue) ? newValue : oldValue;
+              return isBlank(newValue) || isPositiveInteger(newValue)
+                ? newValue
+                : oldValue;
             }
           }}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0 text-right'
           ref={quantityRef.ref}
         />
+        {/* {console.log(quantityAllowed)} */}
         {showQuantityLimit && (
           <span className='ml-2 font-bold'>/ {quantityAllowed}</span>
         )}
