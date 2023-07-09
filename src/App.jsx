@@ -36,7 +36,7 @@ function getPageContent(page) {
     PRINT,
     TEST,
   } = pages;
-  console.log(`Current page is ${page}`);
+
   switch (page) {
     case HOME:
       return HomePage;
@@ -55,6 +55,7 @@ function getPageContent(page) {
     case TEST:
       return TestPage;
     default:
+      console.log(`Current page is ${page}`);
       return NotFoundPage;
   }
 }

@@ -2,8 +2,10 @@ import React, { useState, createContext } from 'react';
 
 const AppContext = createContext({
   page: '',
-  appName: '',
+  type: '',
+  parameterValue: null,
   changePage: (pageName, type) => {},
+  appName: '',
   navMenu: [],
   contentSpinner: null,
   setContentSpinner: (value) => {},
@@ -143,14 +145,16 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(DELIVERY_CHALLAN);
+  const [page, setPage] = useState(CUSTOMER_MASTER);
   const [type, setType] = useState(DELETE);
+  const [parameterValue, setParameterValue] = useState(null);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 
-  const changePage = (pageName, type = null) => {
+  const changePage = (pageName, type = null, parameterValue = null) => {
     setPage(pageName);
     setType(type);
+    setParameterValue(parameterValue);
   };
 
   pageModule.listenPageChanges(changePage);
@@ -160,6 +164,7 @@ export const AppContextProvider = ({ children }) => {
       value={{
         page,
         type,
+        parameterValue,
         changePage,
         appName,
         navMenu,

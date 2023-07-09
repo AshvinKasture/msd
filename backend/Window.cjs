@@ -79,12 +79,20 @@ class WindowHandler {
         this.devTools.setPosition(1913, 147);
         this.devTools.setSize(526, 735);
         // this.window.show(); // Maybe useful
+      } else if (allScreens.length === 2) {
+        this.window.webContents.openDevTools();
+      } else if (allScreens.length === 1) {
+        this.window.webContents.openDevTools();
       }
     }, 200);
   }
 
-  changePage({ pageName, pageType }) {
-    this.window.webContents.send('PAGE', { pageName, pageType });
+  changePage({ pageName, pageType, parameterValue = null }) {
+    this.window.webContents.send('PAGE', {
+      pageName,
+      pageType,
+      parameterValue,
+    });
   }
 
   saveDialogBox({ title = this.appName, message, filters = [] }) {

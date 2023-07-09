@@ -99,6 +99,8 @@ class BusinessLayer {
           return await this.editItem(data);
         case comCodes.DELETE_ITEM:
           return await this.deleteItem(data);
+        case comCodes.CHECK_IF_ITEM_EXISTS:
+          return await this.checkIfItemExists(data);
         case comCodes.IMPORT_ITEM_MASTER:
           await this.importItemMaster(data);
           break;
@@ -197,7 +199,7 @@ class BusinessLayer {
         });
         return false;
       }
-      const response = await this.db.exec({
+      await this.db.exec({
         query:
           'INSERT INTO item_master(drawing_no, description) VALUES($drgNo, $description);',
         params: {
@@ -205,8 +207,13 @@ class BusinessLayer {
           $description: description,
         },
       });
+      const lastItemId = (
+        await this.db.exec({
+          query: 'SELECT MAX(item_id) AS lastItemId FROM item_master',
+        })
+      )[0].lastItemId;
       await this.windowHandeler.showInfoBox({ message: 'Item created' });
-      return true;
+      return lastItemId;
     } catch (error) {
       console.error(error);
       this.windowHandeler.showErrorBox({

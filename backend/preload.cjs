@@ -9,9 +9,12 @@ contextBridge.exposeInMainWorld('pageModule', {
     });
   },
   listenPageChanges: (changePage) => {
-    ipcRenderer.on('PAGE', (event, { pageName, pageType }) => {
-      changePage(pageName, pageType);
-    });
+    ipcRenderer.on(
+      'PAGE',
+      (event, { pageName, pageType, parameterValue = null }) => {
+        changePage(pageName, pageType, parameterValue);
+      }
+    );
   },
 });
 
@@ -59,6 +62,12 @@ contextBridge.exposeInMainWorld('itemMasterModule', {
   deleteItem: async (drawingNo) => {
     return await ipcRenderer.invoke('COMS', {
       code: comCodes.DELETE_ITEM,
+      data: drawingNo,
+    });
+  },
+  checkIfItemExists: async (drawingNo) => {
+    return await ipcRenderer.invoke('COMS', {
+      code: comCodes.CHECK_IF_ITEM_EXISTS,
       data: drawingNo,
     });
   },

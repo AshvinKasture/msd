@@ -48,7 +48,7 @@ const SelectInput = forwardRef(
       if (e.code === 'Tab') {
         e.preventDefault();
         dispatchNavigationShortcut({
-          type: 'ENTER',
+          type: 'MOVE',
           direction: e.shiftKey ? -1 : 1,
           name,
         });

@@ -1,6 +1,6 @@
 import React from 'react';
 
-function TestPage() {
+function TestPage({ type }) {
   return <div>Test Page</div>;
 }
 

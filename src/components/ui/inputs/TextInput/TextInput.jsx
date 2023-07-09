@@ -31,7 +31,6 @@ const TextInput = forwardRef(
     },
     ref
   ) => {
-    // console.log({ name, value });
     const [text, setText] = useState(value);
 
     const inputRef = useRef();
@@ -56,6 +55,7 @@ const TextInput = forwardRef(
     function clickHandler(e) {
       if (replaceClickHandler === null) {
         if (dispatchNavigationShortcut !== null) {
+          console.log(name);
           dispatchNavigationShortcut({ type: 'CLICK', name: name });
         }
         if (extendClickHandler !== null) {
@@ -95,11 +95,16 @@ const TextInput = forwardRef(
     function keyUpHandler(e) {
       if (replaceKeyUpHandler === null) {
         if (dispatchNavigationShortcut !== null) {
-          if (e.code === 'Enter' || e.code === 'Tab') {
+          if (
+            (e.code === 'Enter' || e.code === 'Tab') &&
+            !e.ctrlKey &&
+            !e.altKey
+          ) {
             e.preventDefault();
             dispatchNavigationShortcut({
-              type: 'ENTER',
+              type: 'MOVE',
               direction: e.shiftKey ? -1 : 1,
+              name,
             });
           }
         }
@@ -123,9 +128,11 @@ const TextInput = forwardRef(
       setText('');
     }
 
-    useImperativeHandle(ref, () => {
-      return { value: text, focus, reset, setValue };
-    });
+    if (ref) {
+      useImperativeHandle(ref, () => {
+        return { value: text, focus, reset, setValue };
+      });
+    }
     return (
       <input
         className={twMerge(
@@ -150,3 +157,9 @@ const TextInput = forwardRef(
 );
 
 export default TextInput;
+
+// function TextInput() {
+//   return <div>TextInput</div>;
+// }
+
+// export default TextInput;

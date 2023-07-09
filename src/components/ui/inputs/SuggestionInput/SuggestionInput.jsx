@@ -14,7 +14,7 @@ const SuggestionInput = forwardRef(
       suggestions = [],
       placeholder = '',
       name = null,
-      value = '',
+      value = null,
       disabled = false,
       width = 'w-52',
       strict = true,
@@ -28,87 +28,157 @@ const SuggestionInput = forwardRef(
   ) => {
     const inputRef = useRef();
     const [
-      { text, filteredSuggestions, showSuggestionBox, isValid },
+      {
+        text,
+        filteredSuggestions,
+        showSuggestionBox,
+        isValid,
+        focusedSuggestion,
+      },
       dispatchState,
     ] = useReducer(
       (state, { type, payload }) => {
+        let {
+          text,
+          filteredSuggestions,
+          showSuggestionBox,
+          isValid,
+          focusedSuggestion,
+        } = {
+          ...state,
+        };
         switch (type) {
           case 'CHANGE_VALUE':
-            const filteredSuggestions =
-              payload !== ''
-                ? suggestions.filter((suggestionItem) =>
-                    suggestionItem.toLowerCase().includes(payload.toLowerCase())
-                  )
-                : [];
-            console.log(suggestions.includes(payload));
+            filteredSuggestions = filterSuggestions(payload);
+            isValid = isValidSuggestion(payload);
             return {
               text: payload,
               filteredSuggestions,
-              showSuggestionBox: filteredSuggestions.length > 0,
-              isValid: strict ? suggestions.includes(payload) : true,
+              showSuggestionBox:
+                filteredSuggestions.length > 1 ? true : !isValid,
+              isValid: strict ? isValidSuggestion(payload) : true,
+              focusedSuggestion: filteredSuggestions.length > 0 ? 0 : -1,
             };
           case 'FILL_SUGGESTION':
             return {
               text: payload,
-              filteredSuggestions: state.filteredSuggestions,
+              filteredSuggestions: filterSuggestions(payload),
               showSuggestionBox: false,
               isValid: true,
+              focusedSuggestion: -1,
             };
           case 'SET_VALUE':
             return {
               text: payload,
-              filteredSuggestions:
-                payload !== ''
-                  ? suggestions.filter((suggestionItem) =>
-                      suggestionItem
-                        .toLowerCase()
-                        .includes(payload.toLowerCase())
-                    )
-                  : [],
+              filteredSuggestions: filterSuggestions(payload),
               showSuggestionBox: false,
-              isValid: strict ? suggestions.indexOf(payload) !== -1 : true,
+              isValid: strict ? isValidSuggestion(payload) : true,
+              focusedSuggestion: -1,
             };
           case 'SHOW_SUGGESTION_BOX':
+            if (payload) {
+              if (filteredSuggestions.length === 0) {
+                showSuggestionBox = false;
+              } else if (filteredSuggestions.length === 1) {
+                showSuggestionBox = !isValid;
+              } else if (filteredSuggestions.length > 1) {
+                true;
+              }
+            } else {
+              showSuggestionBox = false;
+            }
             return {
-              ...state,
-              showSuggestionBox:
-                payload && state.filteredSuggestions.length > 0,
+              text,
+              filteredSuggestions,
+              showSuggestionBox,
+              isValid,
+              focusedSuggestion: filteredSuggestions.length > 0 ? 0 : -1,
             };
           case 'REMOVE_IF_INVALID':
-            if (state.isValid) {
-              return { ...state };
+            if (isValid) {
+              return {
+                text,
+                filteredSuggestions,
+                showSuggestionBox: false,
+                isValid,
+                focusedSuggestion: -1,
+              };
             } else {
               return {
-                ...state,
                 text: '',
                 filteredSuggestions: [],
-                isValid: false,
                 showSuggestionBox: false,
+                isValid: false,
+                focusedSuggestion: -1,
               };
             }
+          case 'NEXT_SUGGESTION':
+            return {
+              text,
+              filteredSuggestions,
+              showSuggestionBox,
+              isValid,
+              focusedSuggestion:
+                focusedSuggestion + 1 >= filteredSuggestions.length
+                  ? focusedSuggestion
+                  : focusedSuggestion + 1,
+            };
+          case 'PREVIOUS_SUGGESTION':
+            return {
+              text,
+              filteredSuggestions,
+              showSuggestionBox,
+              isValid,
+              focusedSuggestion:
+                focusedSuggestion > 0
+                  ? focusedSuggestion - 1
+                  : focusedSuggestion,
+            };
           case 'RESET':
             return {
               text: value,
               filteredSuggestions: [],
-              isValid:
-                value === '' ? false : isValidSuggestion(suggestions, value),
               showSuggestionBox: false,
+              isValid: strict ? isValidSuggestion(payload) : true,
+              focusedSuggestion: -1,
             };
           default:
-            return { ...state };
+            return {
+              text,
+              filteredSuggestions,
+              showSuggestionBox,
+              isValid,
+              focusedSuggestion: -1,
+            };
         }
       },
       {
         text: value,
         filteredSuggestions: [],
-        isValid: value === '' ? false : isValidSuggestion(suggestions, value),
+        isValid: value === '' ? false : isValidSuggestion(value),
         showSuggestionBox: false,
+        focusedSuggestion: -1,
       }
     );
 
     useEffect(() => {
-      dispatchState({ type: 'SET_VALUE', payload: value });
+      if (value) {
+        console.log('setting value');
+        dispatchState({ type: 'SET_VALUE', payload: value });
+      }
     }, [value]);
+
+    function filterSuggestions(value) {
+      return value !== ''
+        ? suggestions.filter((suggestionItem) =>
+            suggestionItem.toLowerCase().includes(value.toLowerCase())
+          )
+        : [];
+    }
+
+    function isValidSuggestion(value) {
+      return suggestions.includes(value);
+    }
 
     function changeHandler(e) {
       dispatchState({ type: 'CHANGE_VALUE', payload: e.target.value });
@@ -131,7 +201,6 @@ const SuggestionInput = forwardRef(
     function blurHandler(e) {
       setTimeout(() => {
         dispatchState({ type: 'REMOVE_IF_INVALID' });
-        dispatchState({ type: 'SHOW_SUGGESTION_BOX', payload: false });
       }, 100);
       if (extendBlurHandler) {
         setTimeout(() => {
@@ -141,25 +210,29 @@ const SuggestionInput = forwardRef(
     }
 
     function keyUpHandler(e) {
-      if (e.code === 'Enter') {
-        if (showSuggestionBox) {
-          if (filteredSuggestions.length === 1) {
-            fillSuggestion(filteredSuggestions[0]);
-          }
-        } else {
-          if (strict ? isValid : true) {
-            dispatchNavigationShortcut({
-              type: 'ENTER',
-              direction: e.shiftKey ? -1 : 1,
-            });
-          }
+      if (showSuggestionBox) {
+        if (e.code === 'Enter') {
+          fillSuggestion(filteredSuggestions[focusedSuggestion]);
+        } else if (e.code === 'ArrowUp') {
+          dispatchState({ type: 'PREVIOUS_SUGGESTION' });
+        } else if (e.code === 'ArrowDown') {
+          dispatchState({ type: 'NEXT_SUGGESTION' });
+        } else if (e.code === 'Escape') {
+          dispatchState({ type: 'SHOW_SUGGESTION_BOX', payload: false });
         }
-      } else if (e.code === 'Tab') {
+      } else if (
+        (e.code === 'Enter' || e.code === 'Tab') &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
         e.preventDefault();
-        dispatchNavigationShortcut({
-          type: 'ENTER',
-          direction: e.shiftKey ? -1 : 1,
-        });
+        if (dispatchNavigationShortcut !== null) {
+          dispatchNavigationShortcut({
+            type: 'MOVE',
+            direction: e.shiftKey ? -1 : 1,
+            name,
+          });
+        }
       }
     }
 
@@ -185,7 +258,7 @@ const SuggestionInput = forwardRef(
         <TextInput
           placeholder={placeholder}
           name={name}
-          value={text}
+          value={text ? text : ''}
           disabled={disabled}
           width={width}
           className={classes}
@@ -199,15 +272,12 @@ const SuggestionInput = forwardRef(
         <SuggestionBox
           show={showSuggestionBox}
           suggestions={filteredSuggestions}
+          focusedSuggestion={focusedSuggestion}
           fillSuggestion={fillSuggestion}
         />
       </div>
     );
   }
 );
-
-function isValidSuggestion(suggestions, value) {
-  return suggestions.includes(value);
-}
 
 export default SuggestionInput;
