@@ -13,6 +13,7 @@ const SuggestionInput = ({
   disabled,
   dispatchState,
 }) => {
+  console.log(value);
   const inputRef = useRef();
 
   const [showSuggestionBox, setShowSuggestionBox] = useState(false);
@@ -27,7 +28,12 @@ const SuggestionInput = ({
     }
   }, [hasFocus]);
 
+  useEffect(() => {
+    console.log({ name, value });
+  }, []);
+
   function changeValue(value) {
+    console.log('changing value');
     dispatchState({
       type: 'CHANGE_VALUE',
       payload: { fieldName: name, value },

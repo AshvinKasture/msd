@@ -9,24 +9,25 @@ import DateInput from '../../../components/ui/inputs/DateInput/DateInput';
 import ActionButton from '../../../components/ui/ActionButton';
 import TableRow from '../../../components/table/po/TableRow';
 
-function CreatePoMaster() {
-  const { setContentSpinner, changePage } = useContext(AppContext);
+function ViewPoMaster() {
+  const { changePage, setContentSpinner, parameterValue } =
+    useContext(AppContext);
 
-  const [customerList, setCustomerList] = useState([]);
+  const [poList, setPoList] = useState([]);
   const [itemsTable, setItemsTable] = useState({ rawItems: [] });
 
   useEffect(() => {
     getItemsTable();
-    getCustomerList();
+    getPoList();
   }, []);
 
-  async function getCustomerList() {
-    setCustomerList(
-      (await customerMasterModule.getCustomers()).map(
-        (customerItem) => customerItem.customer_name
-      )
-    );
-  }
+  useEffect(() => {
+    console.log(parameterValue);
+    if (parameterValue) {
+      poNumberRef.ref.current.setValue(parameterValue);
+      fillSelectedPoDetails(parameterValue);
+    }
+  }, [parameterValue]);
 
   async function getItemsTable() {
     const items = await itemMasterModule.getItems();
@@ -42,40 +43,25 @@ function CreatePoMaster() {
     setItemsTable(itemsTable);
   }
 
-  function isRowValid({ drawingNo, description, quantity }) {
-    return (
-      itemsTable.rawItems.map((item) => item.drawing_no).includes(drawingNo) &&
-      itemsTable.drawingNoMapping[drawingNo] === description &&
-      +quantity > 0
-    );
+  async function fillSelectedPoDetails(poNumber) {
+    const poDetails = await poMasterModule.getPoDetails(poNumber);
+    customerNameRef.ref.current.setValue(poDetails.customerName);
+    poDateRef.ref.current.setValue(poDetails.poDate);
+    const tableRows = [];
+    for (let i = 0; i < poDetails.poItems.length; i++) {
+      const {
+        drawing_no: drawingNo,
+        description,
+        quantity,
+      } = poDetails.poItems[i];
+      tableRows.push({ index: i, drawingNo, description, quantity });
+    }
+    dispatchTableState({ type: 'SET_ROWS', payload: tableRows });
   }
 
-  async function createPo() {
-    setContentSpinner(true);
-    const poNumber = poNumberRef.ref.current.value;
-    const customerName = customerNameRef.ref.current.value;
-    const poDate = poDateRef.ref.current.value;
-    const validRows = [];
-    for (let i = 0; i < tableState.rows.length; i++) {
-      const row = tableState.rows[i];
-      if (isRowValid(row)) {
-        validRows.push(row);
-      }
-    }
-    if (!(poNumber === '' || customerName === '' || validRows.length < 1)) {
-      const poData = { poNumber, customerName, poDate, itemRows: validRows };
-      await poMasterModule.createPo(poData);
-      setContentSpinner(false);
-      changePage(pages.PO_MASTER, types.VIEW, poNumber);
-    }
-    setContentSpinner(false);
-  }
-
-  function resetPage() {
-    poNumberRef.ref.current.reset();
-    customerNameRef.ref.current.reset();
-    poDateRef.ref.current.reset();
-    resetTable();
+  async function getPoList() {
+    const poList = await poMasterModule.getPoList();
+    setPoList(poList.map((poItem) => poItem.po_no));
   }
 
   const [
@@ -117,26 +103,36 @@ function CreatePoMaster() {
       <div className='flex flex-col'>
         <div className='flex justify-center gap-10'>
           <FormField
-            component={TextInput}
+            component={SuggestionInput}
             label='PO Number'
             componentProperties={{
               placeholder: 'PO Number',
               name: 'poNumber',
-              dispatchNavigationShortcut,
+              suggestions: poList,
+              strict: true,
+              extendChangeHandler: () => {
+                setTimeout(() => {
+                  const { value, isValid } = poNumberRef.ref.current;
+                  if (isValid) {
+                    fillSelectedPoDetails(value);
+                  }
+                }, 100);
+              },
+              extendFillHandler: (value) => {
+                fillSelectedPoDetails(value);
+              },
             }}
             ref={poNumberRef.ref}
           />
         </div>
         <div className='flex justify-center gap-10'>
           <FormField
-            component={SuggestionInput}
+            component={TextInput}
             label='Customer Name'
             componentProperties={{
-              placeholder: 'Customer Name',
               name: 'customerName',
-              suggestions: customerList,
-              strict: true,
-              dispatchNavigationShortcut,
+              value: '',
+              disabled: true,
             }}
             ref={customerNameRef.ref}
           />
@@ -145,8 +141,8 @@ function CreatePoMaster() {
             label='PO Date'
             componentProperties={{
               name: 'poDate',
-              dispatchNavigationShortcut,
-              // value: new Date(),
+              value: '',
+              disabled: true,
             }}
             ref={poDateRef.ref}
           />
@@ -171,55 +167,29 @@ function CreatePoMaster() {
           </div>
         </div>
         <div className='table-row-group'>
-          {/* {console.log({ focusedIndex: tableState.focusedIndex }) && ''} */}
           {tableState.rows.map((tableRow) => {
             return (
               <TableRow
                 key={tableRow.index}
                 rowData={tableRow}
-                lastActionHandler={lastActionHandler}
-                setDrawingNo={setDrawingNo}
-                setDescription={setDescription}
-                setQuantity={setQuantity}
-                itemsTable={itemsTable}
-                disableDelete={tableState.lastRowIndex === 0}
-                deleteRowHandler={deleteRow}
-                setFocusedRow={setFocusedRow}
-                focusFirstElement={tableRow.index === tableState.focusedIndex}
+                disableDelete={true}
+                disabled={true}
               />
             );
           })}
         </div>
       </div>
+
       <ActionButton
-        className='block bg-white text-black border hover:bg-black hover:text-white border-black mt-5'
-        onClick={addRow}
+        className='block mx-auto my-10'
+        onClick={(e) => {
+          changePage(pages.HOME);
+        }}
       >
-        Add Row
+        Back
       </ActionButton>
-      <div className='flex justify-center gap-x-10 mt-24'>
-        <ActionButton
-          className='bg-gray-500'
-          onClick={(e) => {
-            changePage(pages.HOME);
-          }}
-        >
-          Back
-        </ActionButton>
-        <ActionButton
-          className='bg-red-500'
-          onClick={(e) => {
-            resetPage();
-          }}
-        >
-          Discard
-        </ActionButton>
-        <ActionButton className='bg-green-500' onClick={createPo}>
-          Save
-        </ActionButton>
-      </div>
     </Fragment>
   );
 }
 
-export default CreatePoMaster;
+export default ViewPoMaster;

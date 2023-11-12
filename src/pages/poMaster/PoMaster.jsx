@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
 import TitleBar from '../../components/layout/TitleBar/TitleBar';
 import CreatePoMaster from './create/CreatePoMaster';
+import ViewPoMaster from './view/viewPoMaster';
 // import ViewPoMaster from './view/ViewPoMaster';
 // import EditPoMaster from './edit/EditPoMaster';
 // import DeletePoMaster from './delete/DeletePoMaster';
@@ -8,7 +9,7 @@ import CreatePoMaster from './create/CreatePoMaster';
 function PoMaster({ type }) {
   const modeContent = {
     CREATE: CreatePoMaster,
-    // VIEW: ViewPoMaster,
+    VIEW: ViewPoMaster,
     // EDIT: EditPoMaster,
     // DELETE: DeletePoMaster,
   };

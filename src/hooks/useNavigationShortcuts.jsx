@@ -14,7 +14,6 @@ function useNavigationShortcuts({
   }
 
   function isFocusable(fieldName) {
-    console.log(fieldName);
     return fieldList.find((field) => field.name === fieldName).focusable;
   }
 
@@ -49,6 +48,7 @@ function useNavigationShortcuts({
 
   function dispatchNavigationShortcut({ type, direction, name }) {
     if (isFocusable(name)) {
+      let indexNo;
       switch (type) {
         case 'MOVE':
           if (currentSequenceNo + direction >= focusableFields.length) {
@@ -61,11 +61,15 @@ function useNavigationShortcuts({
           }, 100);
           break;
         case 'CLICK':
-          const indexNo = focusableFields.findIndex(
-            (field) => field.name === name
-          );
+          indexNo = getSequenceNo(name);
           currentSequenceNo = indexNo >= 0 ? indexNo : currentSequenceNo;
           break;
+        case 'SET_FOCUS':
+          indexNo = getSequenceNo(name);
+          currentSequenceNo = indexNo >= 0 ? indexNo : currentSequenceNo;
+          break;
+        default:
+          console.error('No case found');
       }
     }
   }

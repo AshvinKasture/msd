@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   forwardRef,
   useImperativeHandle,
 } from 'react';
@@ -28,13 +29,14 @@ const DateInput = forwardRef(
   ) => {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
+    const datePickerRef = useRef(null);
+
     useEffect(() => {
-      console.log(value, new Date().getSeconds());
       setSelectedDate(value);
     }, [value]);
 
     function focus() {
-      console.log('Focus function yet tobe implemented for DateInput');
+      datePickerRef.current.input.focus();
     }
 
     function reset() {
@@ -62,6 +64,7 @@ const DateInput = forwardRef(
         selected={selectedDate}
         disabled={disabled}
         onChange={(date) => setSelectedDate(date)}
+        ref={datePickerRef}
       />
     );
   }

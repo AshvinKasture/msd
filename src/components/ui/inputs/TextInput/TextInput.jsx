@@ -36,6 +36,7 @@ const TextInput = forwardRef(
     const inputRef = useRef();
 
     useEffect(() => {
+      // console.log({ name, value });
       setText(value);
     }, [value]);
 
@@ -55,7 +56,6 @@ const TextInput = forwardRef(
     function clickHandler(e) {
       if (replaceClickHandler === null) {
         if (dispatchNavigationShortcut !== null) {
-          console.log(name);
           dispatchNavigationShortcut({ type: 'CLICK', name: name });
         }
         if (extendClickHandler !== null) {

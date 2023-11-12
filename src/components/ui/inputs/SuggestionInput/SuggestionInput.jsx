@@ -21,6 +21,7 @@ const SuggestionInput = forwardRef(
       extendChangeHandler = null,
       extendFillHandler = null,
       extendBlurHandler = null,
+      extendClickHandler = null,
       dispatchNavigationShortcut = null,
       className: classes = '',
     },
@@ -50,6 +51,7 @@ const SuggestionInput = forwardRef(
         switch (type) {
           case 'CHANGE_VALUE':
             filteredSuggestions = filterSuggestions(payload);
+            // console.log(payload, filteredSuggestions);
             isValid = isValidSuggestion(payload);
             return {
               text: payload,
@@ -163,7 +165,6 @@ const SuggestionInput = forwardRef(
 
     useEffect(() => {
       if (value) {
-        console.log('setting value');
         dispatchState({ type: 'SET_VALUE', payload: value });
       }
     }, [value]);
@@ -266,6 +267,7 @@ const SuggestionInput = forwardRef(
           replaceFocusHandler={focusHandler}
           replaceBlurHandler={blurHandler}
           replaceKeyUpHandler={keyUpHandler}
+          extendClickHandler={extendClickHandler}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           ref={inputRef}
         />

@@ -24,6 +24,5 @@ export function isGstNo(value) {
 }
 
 export function isBlank(value) {
-  console.log(value == '');
   return value == '';
 }

@@ -17,16 +17,27 @@ function TableRow({
   focusFirstElement = false,
   disableDelete = false,
   deleteRowHandler = null,
+  setFocusedRow = null,
 }) {
-  // console.log(itemsTable);
   const [
     [drawingNoRef, descriptionRef, quantityRef],
     dispatchNavigationShortcut,
-    setFocusedElement,
   ] = useCallback(
     useNavigationShortcuts({
-      sequence: ['drawingNo', 'description', 'quantity'],
-      defaultFocused: 'drawingNo',
+      fieldList: [
+        {
+          name: 'drawingNo',
+          focusable: true,
+        },
+        {
+          name: 'description',
+          focusable: true,
+        },
+        {
+          name: 'quantity',
+          focusable: true,
+        },
+      ],
       lastAction: () => {
         if (lastActionHandler !== null) {
           lastActionHandler(index);
@@ -36,12 +47,27 @@ function TableRow({
     []
   );
 
+  // useEffect(() => {
+  //   if (focusFirstElement) {
+  //     drawingNoRef.ref.current.focus();
+  //   }
+  //   setFocusedElement('drawingNo');
+  // }, [focusFirstElement]);
+
   useEffect(() => {
+    // console.log({ name: 'focusFirstElement', index, focusFirstElement });
     if (focusFirstElement) {
+      dispatchNavigationShortcut({
+        type: 'SET_FOCUS',
+        name: 'drawingNo',
+      });
       drawingNoRef.ref.current.focus();
     }
-    setFocusedElement('drawingNo');
   }, [focusFirstElement]);
+
+  function _setFocusedRow() {
+    setFocusedRow(-1);
+  }
 
   // console.log(showQuantityLimit)
 
@@ -51,6 +77,7 @@ function TableRow({
         {index + 1}.
       </div>
       <div className='table-cell p-2 border border-black'>
+        {/* {console.log({ description })} */}
         <SuggestionInput
           width='w-full'
           name='drawingNo'
@@ -62,10 +89,10 @@ function TableRow({
           extendBlurHandler={
             setDrawingNo &&
             ((e, value) => {
-              console.log('blur');
               setDrawingNo(index, value);
             })
           }
+          extendClickHandler={_setFocusedRow}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0'
           ref={drawingNoRef.ref}
@@ -88,6 +115,7 @@ function TableRow({
               setDescription(index, value);
             })
           }
+          extendClickHandler={_setFocusedRow}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0'
           ref={descriptionRef.ref}
@@ -116,6 +144,7 @@ function TableRow({
                 : oldValue;
             }
           }}
+          extendClickHandler={_setFocusedRow}
           dispatchNavigationShortcut={dispatchNavigationShortcut}
           className='outline-0 text-right'
           ref={quantityRef.ref}

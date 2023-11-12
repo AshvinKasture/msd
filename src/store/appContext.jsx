@@ -145,13 +145,14 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(CUSTOMER_MASTER);
-  const [type, setType] = useState(DELETE);
+  const [page, setPage] = useState(PO_MASTER);
+  const [type, setType] = useState(CREATE);
   const [parameterValue, setParameterValue] = useState(null);
   const [contentSpinner, setContentSpinner] = useState(false);
   const appName = 'Monthly Schedule and Dispatch';
 
   const changePage = (pageName, type = null, parameterValue = null) => {
+    console.log(pageName, type, parameterValue);
     setPage(pageName);
     setType(type);
     setParameterValue(parameterValue);
