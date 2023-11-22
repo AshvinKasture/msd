@@ -16,8 +16,8 @@ function PoMaster({ type }) {
   const PageContent = modeContent[type];
   return (
     <Fragment>
-      <TitleBar>Item Master</TitleBar>
-      <div className='w-2/5  mx-auto mt-24'>
+      <TitleBar>PO Master</TitleBar>
+      <div className='w-4/5 2xl:w-2/5  mx-auto mt-24'>
         <PageContent />
       </div>
     </Fragment>

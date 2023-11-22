@@ -12,7 +12,7 @@ function CreateCustomerMaster() {
   async function createCustomer(e) {
     setContentSpinner(true);
     const customerData = {
-      customerCode: customerCodeRef.Ref.ref.current.value,
+      customerCode: customerCodeRef.ref.current.value,
       customerName: customerNameRef.ref.current.value,
       customerAddress: customerAddressRef.ref.current.value,
       gstNo: gstNoRef.ref.current.value,

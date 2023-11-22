@@ -145,7 +145,7 @@ export const AppContextProvider = ({ children }) => {
       text: 'Exit',
     },
   ];
-  const [page, setPage] = useState(PO_MASTER);
+  const [page, setPage] = useState(DELIVERY_CHALLAN);
   const [type, setType] = useState(CREATE);
   const [parameterValue, setParameterValue] = useState(null);
   const [contentSpinner, setContentSpinner] = useState(false);

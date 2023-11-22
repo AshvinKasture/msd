@@ -43,7 +43,7 @@ function ViewItemMaster() {
 
   function resetPage() {
     drawingNoRef.ref.current.setValue('');
-    descriptionRef.current.setValue('');
+    descriptionRef.ref.current.setValue('');
   }
 
   const [[drawingNoRef, descriptionRef], dispatchNavigationShortcut] =
